@@ -1,0 +1,127 @@
+# Graphs to stress test the syntax
+
+## Example 1
+
+```js
+// Hello! This was made with a much older version of the syntax. Take with a grain of salt
+// https://www.desmos.com/calculator/9kgjzcf1gu
+
+folder "Functional (non-styling) metadata" [
+  // slider: animationPeriod (ms), isPlaying [true, none], min, max, step, playDirection [-1,1], loopMode ["PLAY_ONCE", "PLAY_INDEFINITELY", "LOOP_FORWARD", none (back & forth)]
+  slider a = 5 <- [-10, 10 : 2], @{
+    loopMode: PLAY_ONCE,
+    playDirection: -1,
+    isPlaying: true,
+    animationPeriod: 4000
+  }
+
+  // Problem: need the contents of variable interpolation to depend on the
+  //   specific variable name that the identifier is compiled to
+  note "label: variable interpolation"
+  plot (20,0), @{
+    label: "Num: ${a}"
+  }
+
+  // Table todo; syntax definitely needs some improving
+  note "table: style each column, .columns[i].{latex, lineOpacity, lineWidth, colorLatex, pointOpacity, pointSize}, .columns[i].values[i]"
+  table [
+    x1,
+    y1, @{pointSize: 3, color: RED}
+  ]
+
+  note "Simulations: .fps, .clickableInfo.rules[i].{assignment, expression}"
+  simulation [
+    a <- a+1,
+    b <- a+b,
+  ], @{fps: 3}
+
+  note "ClickableObjects: .clickableInfo.description (are screen reader descriptions subject to LaTeX interpolation?)"
+  plot (-10, 10), @{
+    onClick: [
+      a <- 5
+    ],
+    description: "Click to do a thing"
+  }
+
+  // Image todo
+  note "Image: center, opacity, width, height, angle"
+]
+
+folder "Styling metadata" [
+  // Metadata: color, lineOpacity, lineWidth, lineStyle
+  show y=x, @{
+    color: GREEN,
+    lineOpacity: 1,
+    lineWidth: 5,
+    lineStyle: DASHED
+  }
+
+  let myOrange = rgb(255,186,100)
+
+  // Metadata: colorLatex, pointSize, pointOpacity, pointStyle
+  show (5,0), @{
+    color: myOrange,
+    pointSize: 5*a,
+    pointOpacity: 0.5,
+    pointStyle: OPEN
+  }
+
+  // Metadata: fillOpacity
+  show polygon((0,0),(0,1),(1,1),(1,0), @{
+    fillOpacity: 0.9
+  }
+
+  // todo: regression syntax
+  note "Regression & residual variable"
+  regression a~0, @{
+    residuals: e1
+  }
+
+  // Metadata: labelSize, labelOrientation ["right", "left", ...], labelAngle, suppressTextOutline [true, none], showLabel: [true, none]
+  show (10,0), @{
+    hidden: true,
+    label: "A",
+    labelOrientation: "right",
+    labelSize: "20",
+    suppressTextOutline: true,
+    labelAngle: pi/2
+  }
+]
+
+folder "An assortment of expressions that render differently" [
+  note "Simple plots"
+  show y=x^2
+  show x^2
+  show f(x)=2*x+1
+
+  note "Implicit plots"
+  show f(y)-x=0
+  show x^2=y^2
+
+  note "Single inequalities"
+  show y<x-30
+
+  note "Solved double inequalities"
+  show 2 < x < 3
+
+  note "Polar plots"
+  show r=theta^2, theta <- [0, 2pi]
+
+  note "parametrics"
+  parametric (cos(u), sin(u)), u <- [0, 2pi]
+
+  note "point"
+  show (-3, 0)
+
+  note "List of points"
+  show [(-4,0),(-5,0)]
+
+  note "Polygon"
+  show polygon((0,0),(0,1),(1,1),(1,0))
+]
+```
+
+Macros:
+
+- [https://www.desmos.com/calculator/pxw8sxjyco](https://www.desmos.com/calculator/pxw8sxjyco): Physics state transition folder
+- [https://www.desmos.com/calculator/br3mu4hqxc](https://www.desmos.com/calculator/br3mu4hqxc): view cube folder, in general the 3d stuff, Display All Triangles folder
