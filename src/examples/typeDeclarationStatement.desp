@@ -1,0 +1,6 @@
+type Complex@{real: Num, imag: Num}
+type Point3D@{
+  x: Num,
+  y: Num,
+  z: Num,
+}

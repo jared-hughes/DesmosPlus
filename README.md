@@ -13,28 +13,29 @@ The language is in active development, and development is proceeding here at [ht
 
 ## Design philosophy
 
-- Everything possible in Desmos should be possible in DesmosPlus as well at equal or better convenience.
-- DesmosPlus is a functional language like normal web Desmos; variables are generally immutable, and the order of statements does not affect execution.
+- Everything possible in Desmos should be possible in DesmosPlus as well at similar or better convenience.
+- It should be easy for a human to translate Desmos graphs to DesmosPlus; hence, DesmosPlus syntax should be as similar as possible to Desmos while still maintaining convenience
 - DesmosPlus is not a strict superset of the Desmos syntax. DesmosPlus does not make an attempt to handle LaTeX expressions, but I think there's TeX to text converters if you want to paste expressions from existing graphs.
 - Compiling DesmosPlus code may not always produce idiomatic Desmos code. The compiled output will, in most cases, be readable Desmos code, but this is not guaranteed.
+- DesmosPlus is a functional language like normal web Desmos; variables are generally immutable, and the order of statements does not affect execution.
 
 ## Reference
 
-To see examples of DesmosPlus syntax, see [examples](docs/examples.md)
+To see official, correct examples of DesmosPlus syntax, see the [examples](src/examples).
 
-To see a full guide of the language (essentially a language spec, evolving until initial release), read:
+To see a somewhat-complete guide of the language (also a language spec to some degree, evolving until initial release), read:
 
   - [Syntax](docs/syntax.md)
   - [Types](docs/types.md)
-  - [Block Types](docs/block_types.md)
+  - [Statements](docs/statements.md)
   - [Standard Library](docs/standard_library.md)
 
 ## Progress Timeline
 
 Current progress to 0.1 release (feature parity with Desmos):
 
-- Language design: 70% (100% = includes all features of desktop Desmos)
-- Lexing and Parsing: 0% (100% = can parse all of that)
+- Language design: 80% (100% = includes all features of desktop Desmos)
+- Lexing and Parsing: 60% (100% = can parse all of that)
 - Execution: 0% (100% = can reproduce any glitchless Desmos graph in DesmosPlus)
 
 ## Comparison With Desmos
@@ -54,23 +55,70 @@ Current progress to 0.1 release (feature parity with Desmos):
 - Need to compile
 - Not (yet) created
 
+## Contributing
+
+Contributions are welcome. Feel free to send pull requests or open issues!
+
+Some quick notes for development:
+
+For syntax development:
+
+- I'm using `language-antlr4` Atom package for syntax highlighting.
+- https://github.com/antlr/Antlr4Formatter to format `.g4` code
+-
+
 ## TODOs / Random ideas
 
-- Allow for DesmosPlus packages (e.g. 3D libraries, root-finding libraries) (TODO)
-- Enum type? To represent e.g `lineStyle`∊`["DASHED", "DOTTED", "SOLID"]`
+### Short-term
+
 - Maybe make `graph` a synonym for `show`? May complicate things though
-- Graphing polar functions: should these just be parametrics? (with syntactic sugar ofc lol)
-- `show [Point]` should have metadata option to enable bezier curve fitting;)
+- Graphing polar functions: should these just be parametrics?
 - Should `Num` be changed to `Float`? Maybe `Num` should be a synonym for `Float`?
-- 2D arrays?? (TODO)
-- Syntax for summations/products/integrals (TODO)
+- `/* ... */` multiline comments desired?
+- use words for boolean operations (like in Python?) | or stick with `||`, `&&`, and `!`
+  - would both be viable? ;)
+- regression syntax (along with a way to get regression parameters and other generated values such as the R^2 value?).
+  - Prefer to use `~` but could also use `==`
+  - The hard decision is how to capture the output. Maybe `[$a, $b, $r2] ← Regress(y1==a*x1+b)` or something
+- absolute value with pipes `|expr|`
+- syntax to choose the starting value of sliders
+- I want to remove the `@` syntax for objects if possible. I keep forgetting it, but it does prevent confusion with piecewises.
+- How to determine default colors?
+- Add tuple type? Do we even need to have `Point` as a primitive?
+
+
+### Medium-term
+
+- Enum type? To represent e.g `lineStyle`∊`["DASHED", "DOTTED", "SOLID"]`
+- Syntax for summations/products/integrals
+- default fields in custom types (e.g. default `step: 1` for `Interval`s)
+- Provide a way to set the name of the graph or other graph metadata like axes, random seed, degrees/radians, etc.
+  - choose a slider/simulation to start on initial graph load
+- multiline strings (helpful for folder descriptions)
+- map `block`s over const arrays, at least to get a list of polygons
+- allow statement types/other special tokens as field names? Javascript allows `a = {function: 1}; a.function` and it shouldn't be too hard to work into the parser?
+- string interpolation syntax ... or maybe just `show` function and `concat`
+- string escape sequences. Main ones being `\n` and `\t` for `note` formatting but also `\"`
+- Vectorization syntax, e.g. `[1,2]+[3,4]==_add([1,2], [3,4])` while `[1,2]+/[3,4] == [_add(1,2), _add(3,4)]` or maybe `[1,2]+.[3,4] == [_add(1,2), _add(3,4)]`
+- This could be handled with `map` + `zip`
+- Operations on `Interval`s
+  - In general, default operations on two data classes. `type Point3D@{x:Num, y:Num, z:Num}` should default `_add` to adding corresponding fields
+- Need to make `x`, `y`, `t`, etc. reserved in some way?
+  - Do not remove the ability to have `x` as a custom type field
+  - Do not remove the ability to have `x` as a function argument
+  - Do remove the ability to `let x=...` and `const x=...`, etc.
+- Can't do arithmetic on `VariableReference`s and other types. Can these be taken up to a `FullExpr` rule?
+
+### Long-term
+
+- Allow for DesmosPlus packages (e.g. 3D/complex libraries, root-finding libraries)
+- `show [Point]` should have metadata option to enable bezier curve fitting;)
+- 2D arrays??
 - Option to embolden notes
-- custom type default argument (sugar)
-- Wishlist: want to add slider of points to avoid needing several variable
-- Provide a way to set the name of the graph or other graph metadata like axes
-- `/* ... */` multiline comments
-- multiline strings
-- rename `Metadata` to `Style`?
-- clickableObjects as Metadata?
-- should block types be types usable for variables as well? I feel like we need `Num -> Polygon` at least.
-- Maybe chained polymorphic functions could cause issues https://stackoverflow.com/a/45029756/7481517
+- Make a slider of points to avoid needing several variables
+- images lol
+- Allow nested folders and prepend something to folder name on Desmos export
+
+### Random Notes
+
+- If a list is defined in a table column, it need not be defined in its own `let` block

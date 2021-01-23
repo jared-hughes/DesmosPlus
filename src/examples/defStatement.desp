@@ -1,0 +1,5 @@
+def f1(x) = x^2
+def f2(a,b,c) = a+2*b+c
+def mag(p:Point) = sqrt(p.x^2 + p.y^2)
+def mag(p:Point3D) = sqrt(p.x^2 + p.y^2 + p.z^2)
+def distance(p:Point3D, q:Point3D) = mag(p-q)

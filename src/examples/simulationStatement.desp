@@ -1,0 +1,8 @@
+simulation 30, [
+  $a <- 123
+]
+
+simulation 60, [
+  $count <- count+1,
+  $countPrimes <- countPrimes + {isPrime(count):1, otherwise:0},
+]

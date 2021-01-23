@@ -1,0 +1,22 @@
+folder "Description of folder comments", [
+  show y/x == x/y, @{color: RED}
+]
+
+let prefix = "Folder "
+
+folder prefix + "One", [
+  let a = 2
+  show y == a*x
+]
+
+
+folder prefix + "Two",
+  @{
+    collapsed: true,
+    secret: true,
+    hidden: false
+  }, [
+    show y == 2*a*x
+  ]
+
+// Hold up, the inner brackets are suddenly indented twice?

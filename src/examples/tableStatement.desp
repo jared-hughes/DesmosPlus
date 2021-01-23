@@ -1,0 +1,20 @@
+table xVals [
+  yVals
+]
+
+table xVals [
+  yVals1;
+  yVals2;
+]
+
+table xVals [
+  yVals1, @{color: BLUE, pointSize: 8, pointOpacity: 0.6};
+  yVals2;
+  yVals3, @{color: RED}
+]
+
+// note, no xVals here, so no points are displayed
+table [
+  list1;
+  list2;
+]

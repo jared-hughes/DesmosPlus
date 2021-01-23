@@ -4,7 +4,7 @@
 
 ## On `ans_{n}`
 
-`ans_{n}` is a recent trick I discovered recently wherein you can use e.g `ans_{2}` to refer to the result of the 2nd expression in Desmos. This wreaks havoc with the principles of "order doesn't matter" and is considered a glitch, so it should not be used in DesmosPlus.
+`ans_{n}` is a trick I discovered recently wherein you can use e.g `ans_{2}` to refer to the result of the 2nd expression in Desmos. This wreaks havoc with the principles of "order doesn't matter" and is considered a glitch, so it should not be used in DesmosPlus.
 
 ## On automatic vectorization
 

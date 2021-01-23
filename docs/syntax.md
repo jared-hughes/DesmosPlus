@@ -4,9 +4,7 @@ Until the syntax is implemented, using JavaScript syntax highlighting works dece
 
 ## Identifiers
 
-There is no need to require variable identifiers with subscripts like `P_{list}` as in Desmos. We can use normal `[a-zA-Z][a-zA-Z0-9_]*` identifiers common in programming languages
-
-(note to implementer: underscores can't be used inside variable names in Desmos, so will need to change the name of variables like `age_years` → `a_{geyears1}` if there's already a variable `ageyears`→ `a_{geyears}`
+There is no need to require variable identifiers with subscripts like `P_{list}` as in Desmos. We can use normal `[a-zA-Z_][a-zA-Z0-9_]*` identifiers common in programming languages
 
 ```js
 DesmosPlus | Desmos
@@ -22,7 +20,7 @@ By convention, identifiers starting with a lowercase letter (e.g. `age`) are var
 
 ## Comments
 
-Use `//` for DesmosPlus comments. This are completely ignored by DesmosPlus until the end of the line.
+Use `//` for DesmosPlus comments. These are completely ignored by DesmosPlus until the end of the line.
 
 ```js
 // Initial state
@@ -32,13 +30,19 @@ let y0 = 2
 
 ## Math expressions
 
-Like in Desmos, much of the computation revolves around math expressions: bits of code that evaluate to a value. This includes identifiers and constants grouped together with normal math operators (`+-*/^`), function applications, and piecewises.
+Like in Desmos, much of the computation revolves around math expressions: bits of code that evaluate to a value. This includes identifiers and constants grouped together with operators, function applications, and piecewises.
 
-TODO: silly me; more operators are needed than just those included in Desmos. Reference [https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table) or [https://docs.python.org/3/reference/expressions.html](https://docs.python.org/3/reference/expressions.html) perhaps. Will need logical operators and comparison operators (`!= == < > <= >=`, more). Will need unary plus and minus. Will want `a < b < c <= d`
+List of operators:
+
+- `+-*/^`
+- `%`: `mod`
+- `!=`, `==`: not equal, equals
+- `<`, `<=`, `>=`, `>`: less than, less than or equal to, greater than or equal to, greater than
+  - `a < b < c <= d` works as expected (equivalent to `a<b && b<c && c<=d`), same as in Python
+- `!`, `&&`, `||`: boolean not, and, or
 
 ```js
 DesmosPlus:
-// Everything after each `=` is a mathexpr
 def f(x) = (x^2+1)/x
 let expr1 = -(1+f(5))+3*f(6)
 let expr2 = f(expr1)/expr1
@@ -97,16 +101,27 @@ Just write a float number to use it in an expression, e.g. `4.5` or `3`.
 
 Use `[expr, expr, expr]` to define a list with 3 elements
 
+Alternative method for constructing lists of `Num`s: (range syntax)
+- `[1...9]` for integers from 1 to 5, inclusive. (also OK: `[1,...,9]`) (not OK: `[1,...9]`, `[1...,9]`)
+  - special cases to this syntax `[a...b]`. If `b<a`, then this is equivalent to `[a...b:-1]`,
+    so `[5...2]` gives `[5,4,3,2]`.
+- `[1...9:2]` for odd integers from `1` to `9`, inclusive
+- `[1,3...9]` for odd integers from `1` to `9`, inclusive  (also OK: `[1,3,...,9]`) (not OK: `[1,3,5,...,9]`)
+
 ### Variables
 
-- Any variable can be used in an expression, e.g. `x` or `length`
-- `true` and `false` are predefined boolean values
+- Any variable can be used in an expression, e.g. `x` or `count`
+- `true` and `false` are predefined `Boolean`s
 - `e` `pi` and `tau` are predefined numbers
 
 ### Function Application
 
-`f(a,b,c)`. For block-types we allow `show y=x^2` but I think those are special.
+`f(a,b,c)`. Not much more to say
 
 ### Free Variables
 
-- The number of "Free variables" of an expression is the number of identifiers not defined elsewhere. This is relevant when graphing expressions via `show`
+The number of "Free variables" of an expression is the number of identifiers not defined elsewhere. This is relevant when graphing expressions via `show`.
+
+This means that lambda expressions (like from Haskell/Python/Java) are unnecessary. If `a` is not defined anywhere, then `2*a+1` can be seem as equivalent to `lambda a: 2*a+1` in certain contexts:
+
+  - `show a==b` sees that the expression `a==b` has two free variables and graphs it as if it is `y=x` in Desmos.

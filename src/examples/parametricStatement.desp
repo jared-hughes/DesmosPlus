@@ -1,0 +1,10 @@
+parametric (cos(t), sin(t)), $t<-[0:2*pi]
+parametric (4,8)+2*(cos(2*pi*u), sin(2*pi*u)), $u<-[0:1]
+parametric (t, 2*t), $t<-[5:10], @{color: BLUE, lineWidth: 5}
+parametric
+  (2*cos(t), sin(t)),
+  $t <- [0:2*pi],
+  @{
+    color: GREEN,
+    lineOpacity: 0.5,
+  }

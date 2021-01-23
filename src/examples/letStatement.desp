@@ -1,0 +1,9 @@
+let a = 1
+let b=2
+let _under = 2
+let Capital = 3
+let num4 = 4
+let camelCase = 5
+let PascalCase = 6
+let ha2good4u = 7
+// should fail: let 2abc = 3

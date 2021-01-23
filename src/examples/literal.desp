@@ -1,0 +1,37 @@
+let num1 = 123
+let num2 = 12.3456
+let num3 = 0
+let num4 = 0.0123
+
+let string1 = "Lorem ipsum dolor sit amet."
+let string2 = "let a = 5 // ; def [1,2,3] table"
+
+let list1 = []
+let list2 = [12]
+let list3 = [4,5,6,7,8,9]
+let list4 = [
+  1,
+  2,
+  3,
+]
+let list5 = [
+  1+2/3,
+  4+5
+]
+
+let rangeList1 = [1...9]
+let rangeList2 = [1,...,9]
+let rangeList3 = [1,3...9]
+let rangeList4 = [1,3,...,9]
+let rangeList5 = [1...9:2]
+let rangeList6 = [1,...,9:2]
+
+let interval1 = [1:9]
+let interval2 = [1:9:2]
+
+let object1 = Metadata@{color:BLUE}
+let object2 = @{color:BLUE, lineWidth:9}
+let object3 = Point3D@{x:1, y:2, z:3}
+
+let point1 = (2,3)
+let point2 = (2+3/2, 5^2)
