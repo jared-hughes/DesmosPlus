@@ -19,17 +19,12 @@ Let:                          'let';
 Def:                          'def';
 Note:                         'note';
 Const:                        'const';
-Slider:                       'slider';
 Show:                         'show';
 Parametric:                   'parametric';
 Simulation:                   'simulation';
 Table:                        'table';
 Folder:                       'folder';
 Type:                         'type';
-
-Identifier
-   : [a-zA-Z_] [a-zA-Z0-9_]*
-   ;
 
 SingleLineComment
    : '//' ~ [\r\n]* -> skip
@@ -39,7 +34,7 @@ Whitespace
    : [ \t\r\n\u000B\f\u00A0] -> skip
    ;
 
-// General punctuation
+// Punctuation
 OpenParen:                    '(';
 CloseParen:                   ')';
 OpenBracket:                  '[';
@@ -51,6 +46,11 @@ DoubleColon:                  '::';
 Comma:                        ',';
 Semicolon:                    ';';
 Dot:                          '.';
+DollarSign:                   '$';
+QuestionMark:                 '?';
+ObjectOpen:                   '@{';
+Define:                       '=';
+Assign:                       '<-';
 
 // Math Operators
 Add:                          '+';
@@ -69,18 +69,11 @@ Equals:                       '==';
 NotEquals:                    '!=';
 
 // Boolean Operators
-Not:                          '!';
-And:                          '&&';
-Or:                           '||';
+Not:                          'not';
+And:                          'and';
+Or:                           'or';
 
-// VariableReference
-DollarSign:                   '$';
-// Optional type
-QuestionMark:                 '?';
-
-//// Custom Types
-ObjectOpen:                   '@{';
-
-////// statements.md
-Define:                       '=';
-Assign:                       '<-';
+// Identifiers last so they have lower precedence than `not` and friends
+Identifier
+   : [a-zA-Z_] [a-zA-Z0-9_]*
+   ;

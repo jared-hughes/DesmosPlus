@@ -38,7 +38,7 @@ The type system for DesmosPlus can be seen pretty much as the easiest 10% of Has
   - Equivalent to custom data type `{lo:Num, hi:Num, step:Num}`
   - usage: you can pass an `Interval` to a parametric or a slider
 - `VariableReference`: A reference to a variable itself, not the value
-  - used in `slider`s, `parametric`s, `simulation`s, and `clickableObjects` as the variable to change
+  - used in `parametric`s, `simulation`s, and `clickableObjects` as the variable to change
   - syntax: `$variableName`
 
 - `String`: used as a `const` in notes and folder titles. Also used in labels

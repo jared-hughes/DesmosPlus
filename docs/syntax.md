@@ -38,8 +38,8 @@ List of operators:
 - `%`: `mod`
 - `!=`, `==`: not equal, equals
 - `<`, `<=`, `>=`, `>`: less than, less than or equal to, greater than or equal to, greater than
-  - `a < b < c <= d` works as expected (equivalent to `a<b && b<c && c<=d`), same as in Python
-- `!`, `&&`, `||`: boolean not, and, or
+  - `a < b < c <= d` works as expected (equivalent to `a<b and b<c and c<=d`), same as in Python
+- `not`, `and`, `or`: boolean not, and, or
 
 ```js
 DesmosPlus:

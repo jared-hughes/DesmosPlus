@@ -36,7 +36,7 @@ Current progress to 0.1 release (feature parity with Desmos):
 
 - Language design: 80% (100% = includes all features of desktop Desmos)
 - Lexing and Parsing: 60% (100% = can parse all of that)
-- Execution: 0% (100% = can reproduce any glitchless Desmos graph in DesmosPlus)
+- Visitor and Execution: 15% (100% = can reproduce any glitchless Desmos graph in DesmosPlus)
 
 ## Comparison With Desmos
 
@@ -75,13 +75,12 @@ For syntax development:
 - Graphing polar functions: should these just be parametrics?
 - Should `Num` be changed to `Float`? Maybe `Num` should be a synonym for `Float`?
 - `/* ... */` multiline comments desired?
-- use words for boolean operations (like in Python?) | or stick with `||`, `&&`, and `!`
   - would both be viable? ;)
 - regression syntax (along with a way to get regression parameters and other generated values such as the R^2 value?).
   - Prefer to use `~` but could also use `==`
   - The hard decision is how to capture the output. Maybe `[$a, $b, $r2] ← Regress(y1==a*x1+b)` or something
-- absolute value with pipes `|expr|`
-- syntax to choose the starting value of sliders
+- Add absolute value with pipes `|expr|`
+- Add factorial with bang `!`
 - I want to remove the `@` syntax for objects if possible. I keep forgetting it, but it does prevent confusion with piecewises.
 - How to determine default colors?
 - Add tuple type? Do we even need to have `Point` as a primitive?
@@ -93,14 +92,14 @@ For syntax development:
 - Syntax for summations/products/integrals
 - default fields in custom types (e.g. default `step: 1` for `Interval`s)
 - Provide a way to set the name of the graph or other graph metadata like axes, random seed, degrees/radians, etc.
-  - choose a slider/simulation to start on initial graph load
+  - choose a slider/simulation to start playing on initial graph load
 - multiline strings (helpful for folder descriptions)
 - map `block`s over const arrays, at least to get a list of polygons
 - allow statement types/other special tokens as field names? Javascript allows `a = {function: 1}; a.function` and it shouldn't be too hard to work into the parser?
 - string interpolation syntax ... or maybe just `show` function and `concat`
 - string escape sequences. Main ones being `\n` and `\t` for `note` formatting but also `\"`
 - Vectorization syntax, e.g. `[1,2]+[3,4]==_add([1,2], [3,4])` while `[1,2]+/[3,4] == [_add(1,2), _add(3,4)]` or maybe `[1,2]+.[3,4] == [_add(1,2), _add(3,4)]`
-- This could be handled with `map` + `zip`
+  - This could be handled with `map` + `zip`
 - Operations on `Interval`s
   - In general, default operations on two data classes. `type Point3D@{x:Num, y:Num, z:Num}` should default `_add` to adding corresponding fields
 - Need to make `x`, `y`, `t`, etc. reserved in some way?
@@ -108,6 +107,7 @@ For syntax development:
   - Do not remove the ability to have `x` as a function argument
   - Do remove the ability to `let x=...` and `const x=...`, etc.
 - Can't do arithmetic on `VariableReference`s and other types. Can these be taken up to a `FullExpr` rule?
+- Unicode synonyms `≤≥≠×÷∨∧≡←` maybe.
 
 ### Long-term
 

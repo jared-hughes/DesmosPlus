@@ -1,59 +1,25 @@
 parser grammar DesmosPlusParser;
 
-
 options { tokenVocab = DesmosPlusLexer; }
+
 program
-   : (statement)*
+   : (nestableStatement | folderStatement)*
    ;
 
-statement
-   : nestableStatement
-   | folderStatement
+folderStatement
+   : 'folder' name=mathExpr optionalMetadata ',' '[' nestableStatement* ']'
    ;
 
 nestableStatement
-   : letStatement
-   | constStatement
-   | defStatement
-   | noteStatement
-   | sliderStatement
-   | showStatement
-   | parametricStatement
-   | simulationStatement
-   | tableStatement
-   | typeDeclarationStatement
-   ;
-
-letStatement
-   : 'let' identifier '=' mathExpr
-   ;
-
-constStatement
-   : 'const' identifier '=' mathExpr
-   ;
-
-defStatement
-   : 'def' identifier functionDefinitionArguments '=' mathExpr
-   ;
-
-noteStatement
-   : 'note' mathExpr
-   ;
-
-sliderStatement
-   : 'slider' assignment optionalMetadata
-   ;
-
-showStatement
-   : 'show' mathExpr optionalMetadata
-   ;
-
-parametricStatement
-   : 'parametric' mathExpr ',' assignment optionalMetadata
-   ;
-
-simulationStatement
-   : 'simulation' mathExpr ',' assignmentList
+   : 'let' identifier '=' mathExpr optionalMetadata # LetStatement
+   | 'const' identifier '=' mathExpr # ConstStatement
+   | 'def' identifier functionDefinitionArguments '=' mathExpr # DefStatement
+   | 'note' mathExpr # NoteStatement
+   | 'show' mathExpr optionalMetadata # ShowStatement
+   | 'parametric' mathExpr ',' assignment optionalMetadata # ParametricStatement
+   | 'simulation' fps=mathExpr ',' assignmentList # SimulationStatement
+   | 'table' xlist=mathExpr? '[' (tableLine ';')* tableLine? ']' # TableStatement
+   | 'type' name=identifier '@{' objectInside '}' # TypeDeclarationStatement
    ;
 
 assignment
@@ -64,43 +30,29 @@ assignmentList
    : '[' (assignment ',')* assignment? ']'
    ;
 
-tableStatement
-   : 'table' mathExpr? '[' (tableLine ';')* tableLine? ']'
-   ;
-
 tableLine
    : mathExpr optionalMetadata
-   ;
-
-folderStatement
-   : 'folder' mathExpr optionalMetadata ',' '[' nestableStatement* ']'
    ;
 
 optionalMetadata
    : (',' mathExpr)?
    ;
 
-typeDeclarationStatement
-   : 'type' identifier '@{' objectInside '}'
-   ;
-
 // The `#`s are labels for the listener
 mathExpr
    : mathExpr '.' identifier # ObjectAccessExpression
-   | mathExpr '[' mathExpr ']' # ArrayIndexExpression
+   | mathExpr '[' mathExpr ']' # ListIndexExpression
    | identifier functionArguments # FunctionExpression
-   | '+' mathExpr # UnaryPlusExpression
-   | '-' mathExpr # UnaryMinusExpression
-   | '!' mathExpr # NotExpression
+   | op='+' mathExpr # UnaryPlusExpression
+   | op='-' mathExpr # UnaryMinusExpression
+   | op='not' mathExpr # NotExpression
    | < assoc = right > mathExpr '^' mathExpr # PowerExpression
-   | mathExpr ('*' | '/' | '%') mathExpr # MultiplicativeExpression
-   | mathExpr ('+' | '-') mathExpr # AdditiveExpression
-   // TODO: make comparison chains flat? Maybe ref. Python example grammar
-   // (https://github.com/antlr/grammars-v4/blob/master/python/python3-js/Python3.g4) or handle in listener
-   | mathExpr (('>=' | '>' | '<=' | '<' | '==' | '!=') mathExpr)+ # ComparisonChainExpression
-   | mathExpr '&&' mathExpr # AndExpression
-   | mathExpr '||' mathExpr # OrExpression
-   | identifier # IdentifierExpression
+   | mathExpr op=('*' | '/' | '%') mathExpr # MultiplicativeExpression
+   | mathExpr op=('+' | '-') mathExpr # AdditiveExpression
+   | left=mathExpr op=('>=' | '>' | '<=' | '<' | '==' | '!=') right=mathExpr # ComparisonChainExpression
+   | mathExpr 'and' mathExpr # AndExpression
+   | mathExpr 'or' mathExpr # OrExpression
+   | identifier # VariableExpression
    | literal # LiteralExpression
    | '{' piecewiseBranch (',' piecewiseBranch)* ','? '}' # PiecewiseExpression
    | '(' mathExpr ')' # ParenthesizedExpression
@@ -111,7 +63,7 @@ functionArguments
    ;
 
 functionDefinitionPart
-   : identifier (':' identifier)?
+   : variable=identifier (':' type=identifier)?
    ;
 
 functionDefinitionArguments
@@ -127,13 +79,21 @@ identifier
    ;
 
 literal
-   : NumberLiteral
-   | StringLiteral
+   : numberLiteral
+   | stringLiteral
    | listLiteral
    | rangeListLiteral
    | intervalLiteral
    | objectLiteral
    | pointLiteral
+   ;
+
+numberLiteral
+   : NumberLiteral
+   ;
+
+stringLiteral
+   : StringLiteral
    ;
 
 listLiteral
@@ -150,12 +110,12 @@ rangeListLiteral
    ;
 
 intervalLiteral
-   : '[' mathExpr ':' mathExpr ']' # ContinuousIntervalLiteral
-   | '[' mathExpr ':' mathExpr ':' mathExpr ']' # SteppedIntervalLiteral
+   : '[' mathExpr ':' mathExpr ']'
+   | '[' mathExpr ':' mathExpr ':' mathExpr ']'
    ;
 
 piecewiseBranch
-   : mathExpr ':' mathExpr
+   : condition=mathExpr ':' value=mathExpr
    ;
 
 // assignmentList needed for onClick

@@ -1,0 +1,23 @@
+{
+  "name": "desmosplus",
+  "version": "0.0.1",
+  "description": "Text-based language that compiles to Desmos graphs",
+  "scripts": {
+    "compile": "node src/app.js"
+  },
+  "type": "module",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jared-hughes/DesmosPlus.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jared-hughes/DesmosPlus/issues"
+  },
+  "dependencies": {
+    "antlr4": "^4.9.1"
+  }
+}

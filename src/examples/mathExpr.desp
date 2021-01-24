@@ -1,4 +1,4 @@
-// // Individuals
+// Individuals
 let memb1 = abc.de
 let memb2 = abc.de.ghi
 let get1 = abc[de]
@@ -8,12 +8,14 @@ let func1 = f(1)
 let func2 = func(a,b,123)
 let unaryPlus = +func1
 let unaryMinus = -func1
-let booleanNot = !true
+let booleanNot = not true
 let power1 = 2^3
 let power2 = 2^3^2
 let mult1 = 2*56
 let mult2 = 32/4
 let mult3 = 18%4
+let add1 = 2+8
+let add2 = 1-7
 let rel1 = 5 >= 2
 let rel2 = 5 > 2
 let rel3 = 5 <= 2
@@ -22,8 +24,8 @@ let rel5 = 5 == 2
 let rel6 = 5 != 2
 let relChain1 = a < b < c
 let relChain2 = a < b <= c == d >= e > f != g
-let and1 = true && true
-let or1 = true || false
+let and1 = true and true
+let or1 = true or false
 let identifier = power1
 let literal = 123.456
 let piecewise1 = {x > 5: 4}
@@ -38,9 +40,10 @@ let parenthesized = (1+2*3)
 
 // Precedence/integration tests
 // Please do not smush together all of your expressions like this
+let prec0 = 1<2 and 3<4
 let prec1 = 1-2*3^3^2%9/2
 let prec2 = +2+5*6-3/2%2^(4+(-4))
-let prec3 = 1+2*3>6>1+2&&1<8<1+8
-let prec4 = true&&true||false&&false
-let prec5 = 1>0&&1>2||0<1&&1>0||({8>5:1,3}>2)||!true&&false
+let prec3 = 1+2*3>6>1+2 and 1<8<1+8
+let prec4 = true and true or false and false
+let prec5 = 1>0 and 1>2 or 0<1 and 1>0 or {8>5:1,otherwise:3}>2 or not true and false
 let prec6 = a[b].c.d[e]

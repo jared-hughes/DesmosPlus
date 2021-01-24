@@ -32,6 +32,10 @@ let interval2 = [1:9:2]
 let object1 = Metadata@{color:BLUE}
 let object2 = @{color:BLUE, lineWidth:9}
 let object3 = Point3D@{x:1, y:2, z:3}
+let object4 = @{onClick: [
+  $a <- 5,
+  $val2 <- val2 + 1
+]}
 
 let point1 = (2,3)
 let point2 = (2+3/2, 5^2)

@@ -16,6 +16,15 @@ let r_{esult} = 5+6
 let a = 3
 ```
 
+Sliders
+
+```js
+// a is a slider with default value 4 and values that can range from 1 to 9
+let a = 4, @{sliderInterval: [1:9]}
+// b is a slider with default value 5 and values that can range from 1 to 9 in steps of 2
+let b = 5, @{sliderInterval: [1:9:2]}
+```
+
 ### Mutability
 
 The only way to mutate (change) the value of a variable while a program runs is through `clickableObjects`: simulations or buttons, and these only set to the present values of the expressions. Hence `$a <- 5` sets `a` to `5`, while `$a <- b` sets `a` to the *current value* of `b`.
@@ -94,13 +103,6 @@ const numPolygons4 = f(numVertices)
 
 ## `slider`: sliders
 
-```js
-// slider for a that can range from 1 to 9
-slider $a <- [1:9]
-// slider for b that can range over odd numbers from 1 to 9
-slider $b <- [1:9:2]
-```
-
 ## `show`: for when you want to show something
 
 Syntax: `show expression` or `show expression, metadata`
@@ -160,10 +162,10 @@ show (2,5), bigPointStyle
 
 ## `parametric`: For when you want to show something that's actually a parametric
 
-Syntax: `parametric expr1, expr2` or `parametric expr1, expr2, metadata`
+Syntax: `parametric expr1, assignment` or `parametric expr1, assignment, metadata`
 
-- `expr1` should be of type `Point` or `[Point]` and should have free variable `t` (I haven't come up with a good syntax for allowing change from `t` to other parametrization variables, and I see no need to)
-- `expr2` should be of type `ContinuousRange`
+- `expr1` should be of type `Point` or `[Point]`
+- `assignment` should be like `$t <- [1:5]`
 
 ```js
 parametric (t, 3*t), $t<-[0:5]
