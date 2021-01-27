@@ -18,7 +18,7 @@ export default class ObjectType extends VariableType {
     return new ObjectType(this.type, this.fields, this.numWrapped-1)
   }
 
-  getMemberType(fieldName, ctx) {
+  getMemberType(fieldName, scope) {
     return this.fieldTypes[fieldName]
   }
 }

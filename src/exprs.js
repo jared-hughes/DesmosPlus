@@ -5,7 +5,7 @@ import LanguageElement from './LanguageElement.js'
 // FunctionAlternative.prototype.isSatisfiedBy(arglist)
 // typeclasses/interfaces → subclassing
 
-function satisfyAlternative(alternative, args, ctx) {
+function satisfyAlternative(alternative, args, scope) {
   // returns false if does not satisfy, object localTypeParams if does satisfy
   if (alternative.args.length != args.length) {
     return false
@@ -14,8 +14,8 @@ function satisfyAlternative(alternative, args, ctx) {
   for (let i=0; i<args.length; i++) {
     const expectedTypeGeneral = alternative.args[i].type
     let expectedType = localTypeParams[expectedTypeGeneral] ?? expectedTypeGeneral
-    let foundType = args[i].getType(ctx)
-    if (!foundType.matchesType(expectedType, ctx)) {
+    let foundType = args[i].getType(scope)
+    if (!foundType.matchesType(expectedType, scope)) {
       return false
     }
     if (expectedType.isParametricType) {
@@ -37,18 +37,18 @@ export class FunctionApplication extends LanguageElement {
     this.args = args
   }
 
-  getType(ctx) {
-    if (ctx.funcChain.includes(this.funcName)) {
+  getType(scope) {
+    if (scope.funcChain.includes(this.funcName)) {
       this.throw(`Function ${this.varName} cannot be defined in terms of itself`)
     }
-    const alts = ctx.visitor.functions[this.funcName]
+    const alts = scope.visitor.functions[this.funcName]
     if (alts === undefined) {
       this.throw(`Function ${this.funcName} is not defined`)
     }
-    const argTypes = this.args.map(e => e.getType(ctx))
+    const argTypes = this.args.map(e => e.getType(scope))
     const validAlts = alts.map(alt => ({
       definition: alt,
-      localTypeParams: satisfyAlternative(alt, this.args, ctx),
+      localTypeParams: satisfyAlternative(alt, this.args, scope),
     })).filter(e => e.localTypeParams)
     if (validAlts.length > 1) {
       this.throw(`More than one alternative for ${this.funcName}(${argTypes.join(', ')})`)
@@ -67,9 +67,9 @@ export class FunctionApplication extends LanguageElement {
       }
       return definition.expr.getType(
         new ScopeContext(
-          ctx.visitor,
+          scope.visitor,
           [],
-          [...ctx.funcChain, this.funcName],
+          [...scope.funcChain, this.funcName],
           newLocalVars
         )
       )
@@ -87,9 +87,9 @@ export class ObjectAccessExpression extends LanguageElement {
     this.identifier = identifier
   }
 
-  getType(ctx) {
-    const objectType = this.object.getType(ctx)
-    return objectType.getMemberType(this.identifier, ctx)
+  getType(scope) {
+    const objectType = this.object.getType(scope)
+    return objectType.getMemberType(this.identifier, scope)
   }
 }
 
@@ -100,10 +100,10 @@ export class ObjectInstance extends LanguageElement {
     this.fields = fields
   }
 
-  getType(ctx) {
+  getType(scope) {
     // TODO: check if fields have data of right type
     // TODO: handle incomplete fields, e.g. Metadata (default to null; optional types)
-    return ctx.visitor.types[this.objectName]
+    return scope.visitor.types[this.objectName]
   }
 }
 
@@ -113,18 +113,18 @@ export class VariableExpression extends LanguageElement {
     this.varName = varName
   }
 
-  getType(ctx) {
-    if (ctx.varChain.includes(this.varName)) {
+  getType(scope) {
+    if (scope.varChain.includes(this.varName)) {
       this.throw(`Variable ${this.varName} cannot be defined in terms of itself`)
     }
-    const variable = ctx.getVariable(this.varName)
+    const variable = scope.getVariable(this.varName)
     if (variable.type === undefined) {
       return variable.expr.getType(
         new ScopeContext(
-          ctx.visitor,
-          [...ctx.varChain, this.varName],
-          ctx.funcChain,
-          ctx.localVars,
+          scope.visitor,
+          [...scope.varChain, this.varName],
+          scope.funcChain,
+          scope.localVars,
         )
       )
     } else {
@@ -139,8 +139,8 @@ export class NumberLiteral extends LanguageElement {
     this.value = value
   }
 
-  getType(ctx) {
-    return ctx.visitor.types.Num
+  getType(scope) {
+    return scope.visitor.types.Num
   }
 }
 
@@ -150,8 +150,8 @@ export class StringLiteral extends LanguageElement {
     this.value = value
   }
 
-  getType(ctx) {
-    return ctx.visitor.types.String
+  getType(scope) {
+    return scope.visitor.types.String
   }
 }
 
@@ -161,13 +161,13 @@ export class ListLiteral extends LanguageElement {
     this.entries = entries
   }
 
-  getType(ctx) {
+  getType(scope) {
     if (this.entries.length === 0) {
-      return ctx.visitor.types.Any
+      return scope.visitor.types.Any
     }
-    const type = this.entries[0].getType(ctx)
+    const type = this.entries[0].getType(scope)
     // TODO: function typeSatisfies to handle Any
-    if (!this.entries.every(e => e.getType(ctx) == type)) {
+    if (!this.entries.every(e => e.getType(scope) == type)) {
       this.throw("All entries of a list must have the same type")
     }
     return type.wrapped()
@@ -183,12 +183,12 @@ export class PiecewiseExpression extends LanguageElement {
     this.branches = branches
   }
 
-  getType(ctx) {
-    if (!this.branches.every(e => e.condition.getType(ctx) == ctx.visitor.types.Bool)) {
+  getType(scope) {
+    if (!this.branches.every(e => e.condition.getType(scope) == scope.visitor.types.Bool)) {
       this.throw("Piecewise conditions must have type Bool")
     }
-    const type = this.branches[0].value.getType(ctx)
-    if (!this.branches.every(e => e.value.getType(ctx) == type)) {
+    const type = this.branches[0].value.getType(scope)
+    if (!this.branches.every(e => e.value.getType(scope) == type)) {
       this.throw("All branches of a piecewise must have the same type")
     }
     return type
