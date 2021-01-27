@@ -66,16 +66,26 @@ export default class ASTVisitor {
   addFunction(stmt) {
     this.functions[stmt.funcName] = this.functions[stmt.funcName] || []
     this.functions[stmt.funcName].push({
-      args: stmt.funcArguments.map(e => ({
-        ...e,
-        type: this.types[e.type] ?? this.types.Any
-      })),
+      args: stmt.funcArguments.map(e => {
+        let type = this.types[e.type]
+        if (e.type == null) {
+          type = this.types.Any
+        }
+        if (type === undefined) {
+          throw `Type ${e.type} is not defined`
+        }
+        return {
+          ...e,
+          type: type
+        }
+      }),
       expr: stmt.expr,
       // resultType to be filled in during this.determineTypes
     })
   }
 
   addVariable(stmt) {
+    console.log("add", stmt.variable)
     if (this.globalVars[stmt.variable] !== undefined) {
       throw `Variable ${stmt.variable} is already defined`
     }
@@ -88,17 +98,16 @@ export default class ASTVisitor {
 
   determineGlobals() {
     for (const stmt of this.program) {
-      switch (stmt.statement) {
-        case 'type':
-          this.addType(stmt)
-          break
-        case 'def':
-          this.addFunction(stmt)
-          break
-        case 'let':
-        case 'const':
-          this.addVariable(stmt)
-          break
+      if (stmt.statement == 'type') {
+        this.addType(stmt)
+      } else if (stmt.statement == 'let' || stmt.statement == 'const') {
+        this.addVariable(stmt)
+      }
+    }
+    // needs to be after because function definitions depend on types
+    for (const stmt of this.program) {
+      if (stmt.statement == 'def') {
+        this.addFunction(stmt)
       }
     }
   }

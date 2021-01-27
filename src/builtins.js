@@ -92,20 +92,20 @@ function branch(args, result) {
 export const functions = {
   _add: [
     branch([Num, Num], Num),
-    // branch([Point, Point], Point),
+    branch([Point, Point], Point),
   ],
   _sub: [
     branch([Num, Num], Num),
-    // branch([Point, Point], Point),
+    branch([Point, Point], Point),
   ],
   _mul: [
     branch([Num, Num], Num),
-    // branch([Num, Point], Point),
-    // branch([Point, Num], Point),
+    branch([Num, Point], Point),
+    branch([Point, Num], Point),
   ],
   _div: [
     branch([Num, Num], Num),
-    // branch([Point, Num], Point),
+    branch([Point, Num], Point),
   ],
   mod: [branch([Num, Num], Num)],
   _geq: [branch([Num, Num], Bool)],
@@ -121,11 +121,11 @@ export const functions = {
   _get: [branch([ParamA.wrapped(), Num], ParamA)],
   _neg: [
     branch([Num], Num),
-    // branch([Point], Point),
+    branch([Point], Point),
   ],
   _pos: [
     branch([Num], Num),
-    // branch([Point], Point),
+    branch([Point], Point),
   ],
   rangeTerm: [
     // two-Num is step=1
