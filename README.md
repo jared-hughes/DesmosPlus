@@ -71,6 +71,10 @@ For syntax development:
 
 ### Short-term
 
+- typeclasses with increasing specificity to automatically define `_add(Any, Any)` (add similar) by adding corresponding terms, but can be overridden by defining `_add(MyType, MyType)`
+- Enforce capital/lowercase conventions? Otherwise need some check to prevent collisions like `def Fun(x)=x^2` and `type Fun@{x:1}`
+- Some `throw`s don't have line nums
+
 - Maybe make `graph` a synonym for `show`? May complicate things though
 - Graphing polar functions: should these just be parametrics?
 - Should `Num` be changed to `Float`? Maybe `Num` should be a synonym for `Float`?
@@ -84,6 +88,7 @@ For syntax development:
 - I want to remove the `@` syntax for objects if possible. I keep forgetting it, but it does prevent confusion with piecewises.
 - How to determine default colors?
 - Add tuple type? Do we even need to have `Point` as a primitive?
+- `_get([Any], [Num])`
 
 
 ### Medium-term
@@ -118,6 +123,7 @@ For syntax development:
 - Make a slider of points to avoid needing several variables
 - images lol
 - Allow nested folders and prepend something to folder name on Desmos export
+- errors for incorrect identifiers include fuzzy matching "Maybe you meant ____"
 
 ### Random Notes
 

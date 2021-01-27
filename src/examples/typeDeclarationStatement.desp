@@ -4,3 +4,14 @@ type Point3D@{
   y: Num,
   z: Num,
 }
+type Buffer2D@{
+  xlist: [Num],
+  ylist: [Num],
+}
+
+let a = Point3D(2,3,4)
+let b = Point3D@{x:2, y:3, z:4}
+let c = a.x
+let d = b.y
+let f = Complex(2,2).real
+let g = Buffer2D([2,3,4],[5,6,7]).xlist[0]

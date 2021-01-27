@@ -1,11 +1,21 @@
+// Quick defs
+let a = 1
+let b = 2
+let c = 3
+let d = 4
+let f = 6
+let g = 7
+let numList = [1,2,3]
+let pointList = [(1,1),(2,3),(5,8),(6,7)]
+
 // Individuals
-let memb1 = abc.de
-let memb2 = abc.de.ghi
-let get1 = abc[de]
-let get2 = abc[[1,2,3]]
+let get1 = numList[a]
+let get2 = pointList[3]
 let get3 = [5,6,7][2]
-let func1 = f(1)
-let func2 = func(a,b,123)
+let memb1 = (4,4).x
+let memb2 = get2.y
+let func1 = cos(1)
+let func2 = atan(a,b)
 let unaryPlus = +func1
 let unaryMinus = -func1
 let booleanNot = not true
@@ -28,8 +38,8 @@ let and1 = true and true
 let or1 = true or false
 let identifier = power1
 let literal = 123.456
-let piecewise1 = {x > 5: 4}
-let piecewise2 = {and1: 1, or1: 2, x >= 2: 3}
+let piecewise1 = {a > 5: 4}
+let piecewise2 = {and1: 1, or1: 2, a >= 2: 3}
 let piecewise3 = {
   rel4: 5,
   a > b: 6,
@@ -46,4 +56,4 @@ let prec2 = +2+5*6-3/2%2^(4+(-4))
 let prec3 = 1+2*3>6>1+2 and 1<8<1+8
 let prec4 = true and true or false and false
 let prec5 = 1>0 and 1>2 or 0<1 and 1>0 or {8>5:1,otherwise:3}>2 or not true and false
-let prec6 = a[b].c.d[e]
+// let prec6 = a[b].c.d[e]

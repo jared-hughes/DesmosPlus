@@ -12,6 +12,12 @@ export default class DesmosPlusParserVisitor extends antlr4.tree.ParseTreeVisito
 	}
 
 
+	// Visit a parse tree produced by DesmosPlusParser#statement.
+	visitStatement(ctx) {
+	  return this.visitChildren(ctx);
+	}
+
+
 	// Visit a parse tree produced by DesmosPlusParser#folderStatement.
 	visitFolderStatement(ctx) {
 	  return this.visitChildren(ctx);
@@ -290,6 +296,30 @@ export default class DesmosPlusParserVisitor extends antlr4.tree.ParseTreeVisito
 
 	// Visit a parse tree produced by DesmosPlusParser#objectLiteral.
 	visitObjectLiteral(ctx) {
+	  return this.visitChildren(ctx);
+	}
+
+
+	// Visit a parse tree produced by DesmosPlusParser#VartypeIdentifier.
+	visitVartypeIdentifier(ctx) {
+	  return this.visitChildren(ctx);
+	}
+
+
+	// Visit a parse tree produced by DesmosPlusParser#VartypeNested.
+	visitVartypeNested(ctx) {
+	  return this.visitChildren(ctx);
+	}
+
+
+	// Visit a parse tree produced by DesmosPlusParser#typedefBranch.
+	visitTypedefBranch(ctx) {
+	  return this.visitChildren(ctx);
+	}
+
+
+	// Visit a parse tree produced by DesmosPlusParser#typedefInside.
+	visitTypedefInside(ctx) {
 	  return this.visitChildren(ctx);
 	}
 

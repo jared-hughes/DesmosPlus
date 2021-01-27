@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "description": "Text-based language that compiles to Desmos graphs",
   "scripts": {
-    "compile": "node src/app.js"
+    "compile": "node src/app.js",
+    "inspect": "node --inspect-brk src/app.js"
   },
   "type": "module",
   "directories": {

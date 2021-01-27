@@ -2,8 +2,12 @@ import antlr4 from 'antlr4';
 import DesmosPlusLexer from './DesmosPlusLexer.js';
 import DesmosPlusParser from './DesmosPlusParser.js';
 import DesmosPlusParserVisitor from './DesmosPlusParserVisitor.js'
+import VariableType from './VariableType.js'
+import ObjectType from './ObjectType.js'
+import * as Expr from './exprs.js'
 
-export default class Visitor extends DesmosPlusParserVisitor {
+// compiles ANTLR parse tree to AST
+export default class ParseTreeVisitor extends DesmosPlusParserVisitor {
 	// helpers
   funcApplication(name, ctx, isUnary) {
     if (isUnary === undefined) {
@@ -11,12 +15,9 @@ export default class Visitor extends DesmosPlusParserVisitor {
     }
     const args =
       isUnary
-      ? this.visit(ctx.mathExpr())
+      ? [this.visit(ctx.mathExpr())]
       : ctx.mathExpr().map(e => this.visit(e))
-    return {
-      func: name,
-      args: args
-    }
+    return new Expr.FunctionApplication(ctx, name, args)
   }
 
   getFuncName(op) {
@@ -48,8 +49,13 @@ export default class Visitor extends DesmosPlusParserVisitor {
 
   // visitors for each node type
 	visitProgram(ctx) {
-	  return this.visitChildren(ctx);
+    // slice to remove the EOF token
+	  return ctx.statement().map(e => this.visit(e))
 	}
+
+  visitStatement(ctx) {
+    return this.visit(ctx.children[0])
+  }
 
 	visitFolderStatement(ctx) {
 	  return {
@@ -84,7 +90,6 @@ export default class Visitor extends DesmosPlusParserVisitor {
       funcArguments: this.visit(ctx.functionDefinitionArguments()),
       expr: this.visit(ctx.mathExpr())
     }
-	  return this.visitChildren(ctx);
 	}
 
 	visitNoteStatement(ctx) {
@@ -117,7 +122,6 @@ export default class Visitor extends DesmosPlusParserVisitor {
       fps: this.visit(ctx.fps),
       assignments: this.visit(ctx.assignmentList())
     }
-	  return this.visitChildren(ctx);
 	}
 
 	visitTableStatement(ctx) {
@@ -131,17 +135,34 @@ export default class Visitor extends DesmosPlusParserVisitor {
         },
       ylists: ctx.tableLine().map(e => this.visit(e))
     }
-	  return this.visitChildren(ctx);
 	}
 
 	visitTypeDeclarationStatement(ctx) {
     return {
       statement: 'type',
       name: this.visit(ctx.name),
-      definition: this.visit(ctx.objectInside())
+      definition: new ObjectType(ctx.name, this.visit(ctx.typedefInside()))
     }
-	  return this.visitChildren(ctx);
 	}
+
+  visitTypedefInside(ctx) {
+    return ctx.typedefBranch().map(e => this.visit(e))
+  }
+
+  visitTypedefBranch(ctx) {
+    return {
+      fieldName: this.visit(ctx.identifier()),
+      type: this.visit(ctx.vartype()),
+    }
+  }
+
+  visitVartypeIdentifier(ctx) {
+    return new VariableType(this.visit(ctx.identifier()), 0);
+  }
+
+  visitVartypeNested(ctx) {
+    return this.visit(ctx.vartype()).wrapped()
+  }
 
   visitAssignment(ctx) {
     return {
@@ -167,10 +188,7 @@ export default class Visitor extends DesmosPlusParserVisitor {
     const expr = ctx.mathExpr();
 	  return expr
       ? this.visit(expr)
-      : {
-        objectName: 'Metadata',
-        fields: []
-      };
+      : new Expr.ObjectInstance(ctx, 'Metadata', [])
 	}
 
 	visitParenthesizedExpression(ctx) {
@@ -182,35 +200,40 @@ export default class Visitor extends DesmosPlusParserVisitor {
 	}
 
 	visitComparisonChainExpression(ctx) {
+    // TODO: convert to `_and` chain
     // Despite the name, ComparisonChain only has a left and right expression,
     // where the right expression may be another ComparisonChain
-    const ccec = DesmosPlusParser.ComparisonChainExpressionContext;
+    const funcName = this.getFuncName(ctx.op)
     const left = this.visit(ctx.left)
     const right = this.visit(ctx.right)
-    const funcName = this.getFuncName(ctx.op)
-    let comparisons;
-    if (left.comparisons) {
-      // This branch is for when the right part of the comparison
+    if (ctx.left instanceof DesmosPlusParser.ComparisonChainExpressionContext) {
+      // This branch is for when the left part of the comparison
       // is also a comparison. We want `a<b<c` → `a<b and b<c`, not `a<(b<c)`.
-      comparisons = [
-        ...left.comparisons,
-        {
-          func: funcName,
-          args: [
-            left.comparisons[left.comparisons.length-1].args[1],
-            right
-          ]
-        }
-      ]
+      // TODO semantically, these are not function applications,
+      // so they should not be considered as such in LanguageElement
+      return new Expr.FunctionApplication(
+        ctx,
+        '_and',
+        [
+          left,
+          new Expr.FunctionApplication(
+            ctx,
+            funcName,
+            [
+              // Either _and(..., a<b) or a<b
+              left.args[1].args ? left.args[1].args[1] : left.args[1],
+              right
+            ]
+          )
+        ]
+      )
     } else {
-      comparisons = [
-        {
-          func: funcName,
-          args: [left, right]
-        }
-      ]
+      return new Expr.FunctionApplication(
+        ctx,
+        funcName,
+        [left, right],
+      )
     }
-	  return { comparisons }
 	}
 
 	visitPowerExpression(ctx) {
@@ -226,9 +249,10 @@ export default class Visitor extends DesmosPlusParserVisitor {
 	}
 
 	visitVariableExpression(ctx) {
-	  return {
-      variable: this.visit(ctx.identifier())
-    };
+	  return new Expr.VariableExpression(
+      ctx,
+      this.visit(ctx.identifier())
+    )
 	}
 
 	visitOrExpression(ctx) {
@@ -240,10 +264,11 @@ export default class Visitor extends DesmosPlusParserVisitor {
 	}
 
 	visitFunctionExpression(ctx) {
-	  return {
-      func: this.visit(ctx.identifier()),
-      args: this.visit(ctx.functionArguments())
-    }
+	  return new Expr.FunctionApplication(
+      ctx,
+      this.visit(ctx.identifier()),
+      this.visit(ctx.functionArguments())
+    )
 	}
 
 	visitAndExpression(ctx) {
@@ -255,9 +280,10 @@ export default class Visitor extends DesmosPlusParserVisitor {
 	}
 
 	visitPiecewiseExpression(ctx) {
-	  return {
-      branches: ctx.piecewiseBranch().map(e => this.visit(e))
-    }
+	  return new Expr.PiecewiseExpression(
+      ctx,
+      ctx.piecewiseBranch().map(e => this.visit(e))
+    )
 	}
 
 	visitUnaryPlusExpression(ctx) {
@@ -265,11 +291,12 @@ export default class Visitor extends DesmosPlusParserVisitor {
 	}
 
   visitObjectAccessExpression(ctx) {
-    // may want to chain this like with comparisons to ease execution
-    return {
-      object: this.visit(ctx.mathExpr()),
-      identifier: this.visit(ctx.identifier())
-    }
+    // may want to chain this like with comparisons to ease execution?
+    return new Expr.ObjectAccessExpression(
+      ctx,
+      this.visit(ctx.mathExpr()),
+      this.visit(ctx.identifier())
+    )
   }
 
 	visitMultiplicativeExpression(ctx) {
@@ -283,7 +310,7 @@ export default class Visitor extends DesmosPlusParserVisitor {
 	visitFunctionDefinitionPart(ctx) {
     return {
       variable: this.visit(ctx.variable),
-      type: ctx.type ? this.visit(ctx.type) : 'Any'
+      type: ctx.type ? this.visit(ctx.type) : null
     }
 	}
 
@@ -304,24 +331,15 @@ export default class Visitor extends DesmosPlusParserVisitor {
   }
 
   visitNumberLiteral(ctx) {
-    return {
-      type: 'Num',
-      content: ctx.getText()
-    }
+    return new Expr.NumberLiteral(ctx, ctx.getText())
   }
 
   visitStringLiteral(ctx) {
-    return {
-      type: 'String',
-      content: ctx.getText().slice(1,-1)
-    }
+    return new Expr.StringLiteral(ctx, ctx.getText().slice(1,-1))
   }
 
   visitListLiteral(ctx) {
-    return {
-      type: 'List',
-      entries: ctx.mathExpr().map(e => this.visit(e))
-    }
+    return new Expr.ListLiteral(ctx, ctx.mathExpr().map(e => this.visit(e)))
   }
 
   visitPointLiteral(ctx) {
@@ -329,11 +347,11 @@ export default class Visitor extends DesmosPlusParserVisitor {
   }
 
   visitTermedRangeListLiteral(ctx) {
-    return this.funcApplication('_rangeTerm', ctx)
+    return this.funcApplication('rangeTerm', ctx)
   }
 
   visitSteppedRangeListLiteral(ctx) {
-    return this.funcApplication('_rangeStep', ctx)
+    return this.funcApplication('rangeStep', ctx)
   }
 
   visitIntervalLiteral(ctx) {
@@ -360,10 +378,10 @@ export default class Visitor extends DesmosPlusParserVisitor {
 
   visitObjectLiteral(ctx) {
     let id = ctx.identifier();
-    return {
-      objectName: id ? this.visit(id) : 'Metadata',
-      fields: this.visit(ctx.objectInside(0))
-    }
+    return new Expr.ObjectInstance(
+      ctx,
+      id ? this.visit(id) : 'Metadata',
+      this.visit(ctx.objectInside(0))
+    )
   }
-
 }

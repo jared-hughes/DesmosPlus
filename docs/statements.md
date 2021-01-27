@@ -101,6 +101,8 @@ def f(x) = floor(x/3)
 const numPolygons4 = f(numVertices)
 ```
 
+Unlike JavaScript, where entries of `const` objects can be modified, all fields DesmosPlus `const` objects must stay constant.
+
 ## `slider`: sliders
 
 ## `show`: for when you want to show something

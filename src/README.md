@@ -5,7 +5,7 @@
 Antlr installation at https://github.com/antlr/antlr4/blob/master/doc/getting-started.md
 
 JavaScript compilation:
-- `antlr4 -no-visitor -no-listener -Dlanguage=JavaScript DesmosPlusLexer.g4 DesmosPlusParser.g4 && rm DesmosPlus*.{interp,tokens}`
+- `antlr4 -visitor -no-listener -Dlanguage=JavaScript DesmosPlusLexer.g4 DesmosPlusParser.g4 && rm DesmosPlus*.{interp,tokens}`
 
 Java compilation + grun (testing syntax):
 - Compile: `antlr4 DesmosPlusLexer.g4 DesmosPlusParser.g4 && javac -target 1.7 -source 1.7 DesmosPlus*.java`

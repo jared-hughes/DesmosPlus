@@ -3,7 +3,12 @@ parser grammar DesmosPlusParser;
 options { tokenVocab = DesmosPlusLexer; }
 
 program
-   : (nestableStatement | folderStatement)*
+   : statement* EOF
+   ;
+
+statement
+   : nestableStatement
+   | folderStatement
    ;
 
 folderStatement
@@ -19,7 +24,7 @@ nestableStatement
    | 'parametric' mathExpr ',' assignment optionalMetadata # ParametricStatement
    | 'simulation' fps=mathExpr ',' assignmentList # SimulationStatement
    | 'table' xlist=mathExpr? '[' (tableLine ';')* tableLine? ']' # TableStatement
-   | 'type' name=identifier '@{' objectInside '}' # TypeDeclarationStatement
+   | 'type' name=identifier '@{' typedefInside '}' # TypeDeclarationStatement
    ;
 
 assignment
@@ -63,7 +68,7 @@ functionArguments
    ;
 
 functionDefinitionPart
-   : variable=identifier (':' type=identifier)?
+   : variable=identifier (':' type=vartype)?
    ;
 
 functionDefinitionArguments
@@ -129,4 +134,17 @@ objectInside
 
 objectLiteral
    : identifier? '@{' objectInside '}'
+   ;
+
+vartype
+   : identifier # VartypeIdentifier
+   | '[' vartype ']' #VartypeNested
+   ;
+
+typedefBranch
+   : identifier ':' vartype
+   ;
+
+typedefInside
+   : typedefBranch (',' typedefBranch)* ','?
    ;
