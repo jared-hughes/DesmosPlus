@@ -56,94 +56,83 @@ export const vars = {
   e: {
     expr: BUILTIN,
     type: Num,
+    customLatex: 'e',
   },
   pi: {
     expr: BUILTIN,
     type: Num,
+    customLatex: '\\pi',
   },
   tau: {
     expr: BUILTIN,
     type: Num,
+    customLatex: '\\tau',
   },
   true: {
     expr: BUILTIN,
     type: Bool,
+    customLatex: '1',
   },
   false: {
     expr: BUILTIN,
     type: Bool,
+    customLatex: '0',
   },
 }
 
 vars.otherwise = vars.true
 
-function branch(args, result) {
-  return {
-    // TODO: ESLint the code. Spent far too long debugging to find out that
-    // I forgot to parenthesize the output of this arrow function,
-    // so JS thought this was a statement `t` with label `type`
-    args: args.map(t => ({type: t})),
-    expr: BUILTIN,
-    resultType: result
-  }
+function binop(c) {
+  // TODO: handle operator precedence so (1+2)*3 needs parens but not 1+2*3
+  return ([l,r]) => `\\left(${l}${c}${r}\\right)`
 }
 
-
-export const functions = {
-  _add: [
-    branch([Num, Num], Num),
-    branch([Point, Point], Point),
-  ],
-  _sub: [
-    branch([Num, Num], Num),
-    branch([Point, Point], Point),
-  ],
-  _mul: [
-    branch([Num, Num], Num),
-    branch([Num, Point], Point),
-    branch([Point, Num], Point),
-  ],
-  _div: [
-    branch([Num, Num], Num),
-    branch([Point, Num], Point),
-  ],
-  mod: [branch([Num, Num], Num)],
-  _geq: [branch([Num, Num], Bool)],
-  _gt: [branch([Num, Num], Bool)],
-  _leq: [branch([Num, Num], Bool)],
-  _lt: [branch([Num, Num], Bool)],
-  _neq: [branch([Num, Num], Bool)],
-  _eq: [branch([Num, Num], Bool)],
-  _pow: [branch([Num, Num], Num)],
-  _not: [branch([Bool], Bool)],
-  _and: [branch([Bool, Bool], Bool)],
-  _or: [branch([Bool, Bool], Bool)],
-  _get: [branch([ParamA.wrapped(), Num], ParamA)],
-  _neg: [
-    branch([Num], Num),
-    branch([Point], Point),
-  ],
-  _pos: [
-    branch([Num], Num),
-    branch([Point], Point),
-  ],
-  rangeTerm: [
-    // two-Num is step=1
-    branch([Num, Num], Num.wrapped()),
-    branch([Num, Num, Num], Num.wrapped()),
-  ],
-  rangeStep: [branch([Num, Num, Num], Num.wrapped())],
-  Interval: [
-    branch([Num, Num], Interval),
-    branch([Num, Num, Num], Interval),
-  ],
-  atan: [
-    branch([Num], Num),
-    branch([Num, Num], Num),
-  ],
-  cos: [branch([Num], Num)],
-  sqrt: [branch([Num], Num)],
-  rgb: [branch([Num, Num, Num], Color)],
-  hsv: [branch([Num, Num, Num], Color)],
-  // TODO: wrap up these builtins, ref /docs/standard_library.md
+function ineq(c) {
+  return ([l,r]) => `\\left{${l}${c}${r}:1,0\\right}`
 }
+
+function prefix(c) {
+  return ([a]) => `(${c}${a})`
+}
+
+export const functions = [
+  ['_add', [Num, Num], Num, binop('+')],
+  ['_add', [Point, Point], Point, binop('+')],
+  ['_sub', [Num, Num], Num, binop('-')],
+  ['_sub', [Point, Point], Point, binop('-')],
+  ['_mul', [Num, Num], Num, binop('\\cdot')],
+  ['_mul', [Num, Point], Point, binop('\\cdot')],
+  ['_mul', [Point, Num], Point, binop('\\cdot')],
+  ['_div', [Num, Num], Num, ([l,r]) => `\\frac{${l}}{${r}}`],
+  ['_div', [Point, Num], Point, ([l,r]) => `\\frac{${l}}{${r}}`],
+  ['mod', [Num, Num], Num, true],
+  ['_geq', [Num, Num], Bool, ineq('\\geq')],
+  ['_gt', [Num, Num], Bool, ineq('>')],
+  ['_leq', [Num, Num], Bool, ineq('\\leq')],
+  ['_lt', [Num, Num], Bool, ineq('<')],
+  ['_neq', [Num, Num], Bool, ([l,r]) => `\\left{${l}=${r}:0,1\\right}`],
+  ['_eq', [Num, Num], Bool, ineq('=')],
+  ['_pow', [Num, Num], Num, ([l,r]) => `${l}^{${r}}`],
+  ['_not', [Bool], Bool, prefix('1-')],
+  ['_and', [Bool, Bool], Bool, binop('\\cdot')],
+  ['_or', [Bool, Bool], Bool, ([l,r]) => `\\operatorname{sign}(${l}+${r})`],
+  ['_get', [ParamA.wrapped(), Num], ParamA, ([l,r]) => `${l}\\left[${r}\\right]`],
+  ['_neg', [Num], Num, prefix('-')],
+  ['_neg', [Point], Point, prefix('-')],
+  ['_pos', [Num], Num, prefix('+')],
+  ['_pos', [Point], Point, prefix('+')],
+// two-Num is step=1
+  ['rangeTerm', [Num, Num], Num.wrapped(), ([l,r]) => `\\left[${l}...${r}\\right]`],
+  ['rangeTerm', [Num, Num, Num], Num.wrapped(), ([l,t,r]) => `\\left[${l},${t}...${r}\\right]`],
+  ['rangeStep', [Num, Num, Num], Num.wrapped(), ([l,r,s]) => `\\left[${l},${l}+${s}...${r}\\right]`],
+  ['Interval', [Num, Num], Interval],
+  ['Interval', [Num, Num, Num], Interval],
+  ['atan', [Num], Num, true],
+  ['atan', [Num, Num], Num, true],
+  ['cos', [Num], Num, true],
+  ['sin', [Num], Num, true],
+  ['sqrt', [Num], Num, ([e]) => `\\sqrt{${e}}`],
+  ['rgb', [Num, Num, Num], Color, true],
+  ['hsv', [Num, Num, Num], Color, true],
+  // TODO: finish filling in these builtins
+]

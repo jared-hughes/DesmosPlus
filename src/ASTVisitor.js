@@ -1,14 +1,16 @@
 // compiles AST to Desmos state
 import ScopeContext from './ScopeContext.js'
 import * as Builtins from './builtins.js'
+import IdentifierGenerator from './IdentifierGenerator.js'
 
 export default class ASTVisitor {
   constructor() {
     this.maxFolderId = 0
     this.types = Builtins.primitiveTypes
     this.globalVars = Builtins.vars
-    this.functions = Builtins.functions
-    Builtins.types.map(t => this.addType(t))
+    this.idGenerator = new IdentifierGenerator()
+    this.functions = {}
+    this.usedFunctions = {}
   }
 
   visitProgram(program) {
@@ -20,7 +22,9 @@ export default class ASTVisitor {
     this.determineGlobals()
     // Determine the types of every variable
     this.determineTypes()
-    console.log(this.globalVars)
+    // Convert function and variable expressions to those only involving
+    // Desmos primitive types
+    this.generateDesmos()
   }
 
   expandFolders() {
@@ -46,9 +50,11 @@ export default class ASTVisitor {
   }
 
   addType(stmt) {
+    // TODO: leverage addRawFunction to get defaults for if the function is already defined
+    // e.g. Complex(x:Num)=Complex@{cos(x),sin(x)} before this function is called
     // add type
     this.types[stmt.name] = stmt.definition
-    // add default functions
+    // add default functions for the type
     this.functions[stmt.name] = [
       {
         args: (
@@ -58,14 +64,26 @@ export default class ASTVisitor {
             type: type,
           }))
         ),
-        resultType: stmt.definition
+        resultType: stmt.definition,
+        isPassthrough: true,
       }
     ]
   }
 
+  addRawFunction(func) {
+    this.functions[func.name] = this.functions[func.name] || []
+    this.functions[func.name].push({
+      ...func,
+      // TODO: pushing out identifier twice for same function.
+      // search in this file for idGenerator.nextIdentifier:
+      // should be in getFieldsLatex
+      latexName: func.latexName ?? this.idGenerator.nextIdentifier(func.name),
+    })
+  }
+
   addFunction(stmt) {
-    this.functions[stmt.funcName] = this.functions[stmt.funcName] || []
-    this.functions[stmt.funcName].push({
+    this.addRawFunction({
+      name: stmt.funcName,
       args: stmt.funcArguments.map(e => {
         let type = this.types[e.type]
         if (e.type == null) {
@@ -85,7 +103,6 @@ export default class ASTVisitor {
   }
 
   addVariable(stmt) {
-    console.log("add", stmt.variable)
     if (this.globalVars[stmt.variable] !== undefined) {
       throw `Variable ${stmt.variable} is already defined`
     }
@@ -97,6 +114,25 @@ export default class ASTVisitor {
   }
 
   determineGlobals() {
+    // builtin types
+    Builtins.types.map(t => this.addType(t))
+    // builtin functions
+    for (const [name, args, resultType, customEval] of Builtins.functions) {
+      let func = {
+        name,
+        args: args.map(t => ({type: t})),
+        resultType,
+      }
+      if (customEval === true) {
+        func.latexName = `\\operatorname{${name}}`;
+        func.customEval = L => `${func.latexName}\\left(${L.join(',')}\\right)`
+      } else {
+        // TODO: func.expr = ?
+        func.customEval = customEval
+      }
+      this.addRawFunction(func)
+    }
+    // typedefs and variables from this program
     for (const stmt of this.program) {
       if (stmt.statement == 'type') {
         this.addType(stmt)
@@ -104,6 +140,7 @@ export default class ASTVisitor {
         this.addVariable(stmt)
       }
     }
+    // functions from this program
     // needs to be after because function definitions depend on types
     for (const stmt of this.program) {
       if (stmt.statement == 'def') {
@@ -121,7 +158,130 @@ export default class ASTVisitor {
         variable.type = variable.expr.getType(
           new ScopeContext(this, [varName], [], {})
         )
+        variable.fieldsLatex = this.getFieldsLatex(variable.type, varName);
       }
     }
+  }
+
+  getFieldsLatex(type, prefix) {
+    if (type.fieldTypes) {
+      let fieldsLatex = {}
+      for (const {fieldName} of type.fields) {
+        fieldsLatex[fieldName] = this.idGenerator.nextIdentifier(prefix + fieldName)
+      }
+      return fieldsLatex
+    } else {
+      // It's a Num, not an object
+      return this.idGenerator.nextIdentifier(prefix)
+    }
+  }
+
+  assignmentExpression(variable, scope, expr, fromType, field, latexName) {
+    let latex;
+    if (field) {
+      // TODO: change variable name to latex
+      latex = latexName + '=' + expr.split(scope, fromType, field).toLatex(scope)
+    } else {
+      latex = variable + '=' + expr.toLatex(scope)
+    }
+    return {
+      type: 'expression',
+      id: null, // TODO,
+      latex: latex
+    }
+  }
+
+  generateLet(stmt) {
+    const objectType = this.globalVars[stmt.variable].type
+    const scope = new ScopeContext(this, [stmt.variable], [], {})
+    if (objectType.fields) {
+      return objectType.fields.map(
+        field => this.assignmentExpression(
+          stmt.variable, scope, stmt.expr, objectType, field.fieldName,
+          this.globalVars[stmt.variable].fieldsLatex[field.fieldName]
+        )
+      )
+    } else {
+      return [this.assignmentExpression(stmt.variable, scope, stmt.expr)]
+    }
+  }
+
+  generateDef(stmt) {
+    // If a function is not used, it is not output (hence the `??`)
+    console.log("T", this.usedFunctions)
+    const functionsDefinedHere = (this.usedFunctions[stmt.funcName] ?? [])
+      .filter(func => func.expr && func.expr.line === stmt.expr.line && func.expr.col === stmt.expr.col)
+
+    let out = []
+    let alreadyAddedFuncs = new Set()
+    for (let func of functionsDefinedHere) {
+      if (alreadyAddedFuncs.has(func)) {
+        continue;
+      }
+      alreadyAddedFuncs.add(func)
+      const resultType = func.resultType
+      const scope = new ScopeContext(this, [], [stmt.funcName], func.localVars)
+      // Get args as a list of Num-typed variables
+      let argsFlat = []
+      for (let arg of func.args) {
+        const objectType = arg.type;
+        const variable = func.localVars[arg.variable]
+        if (objectType.fields) {
+          argsFlat.push(
+            ...variable.type.fields.map(
+              ({fieldName}) => variable.fieldsLatex[fieldName]
+            )
+          )
+        } else {
+          // HERE
+          argsFlat.push(variable.fieldsLatex)
+        }
+      }
+      let values;
+      // TODO: treat def's as an `expr` that you can .split(...) on
+      // because there's excessive code duplication in splitting
+      if (resultType.fields) {
+        values = resultType.fields.map(
+          field => ({
+            expr: func.expr.split(scope, resultType, field.fieldName),
+            latexName: func.fieldsLatex[field.fieldName],
+          })
+        )
+      } else {
+        // function result is a Num
+        values = [
+          {
+            expr: func.expr,
+            latexName: func.latexName,
+          }
+        ]
+      }
+      out.push(...values.map(val => (
+        this.assignmentExpression(
+          val.latexName + `(${argsFlat.join(',')})`,
+          scope, val.expr
+        )
+      )))
+    }
+    return out
+  }
+
+  generateDesmos() {
+    // TODO: map local vars?
+    // TODO: handle e.g. `cos(x)` differently than `f2(x)` because `cos` is builtin
+    // let identifierMapping = getIdentifierMapping([
+    //   ...Object.keys(this.globalVars),
+    // ])
+
+    let desmosExpressions = []
+    this.program.map(stmt => {
+      if (stmt.statement == 'let') {
+        // TODO: const?
+        desmosExpressions.push(...this.generateLet(stmt));
+      } else if (stmt.statement == 'def') {
+        desmosExpressions.push(...this.generateDef(stmt));
+      }
+    })
+    console.log(desmosExpressions)
   }
 }

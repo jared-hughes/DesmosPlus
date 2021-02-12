@@ -32,11 +32,11 @@ To see a somewhat-complete guide of the language (also a language spec to some d
 
 ## Progress Timeline
 
-Current progress to 0.1 release (feature parity with Desmos):
+Current progress to 0.1 release (custom types and feature parity with Desmos):
 
 - Language design: 80% (100% = includes all features of desktop Desmos)
-- Lexing and Parsing: 60% (100% = can parse all of that)
-- Visitor and Execution: 15% (100% = can reproduce any glitchless Desmos graph in DesmosPlus)
+- Lexing and Parsing: 80% (100% = can parse all of that)
+- Visitor and Execution: 25% (100% = can reproduce any glitchless Desmos graph in DesmosPlus)
 
 ## Comparison With Desmos
 
@@ -74,6 +74,10 @@ For syntax development:
 - typeclasses with increasing specificity to automatically define `_add(Any, Any)` (add similar) by adding corresponding terms, but can be overridden by defining `_add(MyType, MyType)`
 - Enforce capital/lowercase conventions? Otherwise need some check to prevent collisions like `def Fun(x)=x^2` and `type Fun@{x:1}`
 - Some `throw`s don't have line nums
+- bugs, bugs, bugs
+- inline flag on operator function definitions, so e.g. `def _add(z1:Complex, z2:Complex)=(...)` can be in-lined if desired
+  - `def _add*(z1:Complex, z2:Complex)=(...)`
+  - `def _add(z1:Complex, z2:Complex)=(...), @{inline: true}`
 
 - Maybe make `graph` a synonym for `show`? May complicate things though
 - Graphing polar functions: should these just be parametrics?
@@ -93,6 +97,9 @@ For syntax development:
 
 ### Medium-term
 
+- clearer error messages
+  - `"Piecewise conditions must have type Bool"` → specific condition that lacks type `Bool`
+  - point to error in desp code. Should be simple with `ctx.line` and `ctx.col`
 - Enum type? To represent e.g `lineStyle`∊`["DASHED", "DOTTED", "SOLID"]`
 - Syntax for summations/products/integrals
 - default fields in custom types (e.g. default `step: 1` for `Interval`s)
@@ -107,6 +114,7 @@ For syntax development:
   - This could be handled with `map` + `zip`
 - Operations on `Interval`s
   - In general, default operations on two data classes. `type Point3D@{x:Num, y:Num, z:Num}` should default `_add` to adding corresponding fields
+    - Maybe specify `def _add(p:Point3D, q:Point3D) = default` where `default` is a keyword
 - Need to make `x`, `y`, `t`, etc. reserved in some way?
   - Do not remove the ability to have `x` as a custom type field
   - Do not remove the ability to have `x` as a function argument

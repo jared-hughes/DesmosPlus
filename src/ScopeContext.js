@@ -1,8 +1,13 @@
 export default class ScopeContext {
   constructor(visitor, varChain, funcChain, localVars) {
+    // considering flatting out visitor
     this.visitor = visitor;
+    // used for cycle detection only
     this.varChain = varChain;
+    // used for cycle detection only
     this.funcChain = funcChain;
+    // all localVars contained in the scope
+    // May want to include a scope hierarchy instead (local, more local, more more local)
     this.localVars = localVars;
   }
 
