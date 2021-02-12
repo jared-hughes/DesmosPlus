@@ -23,6 +23,8 @@ The language is in active development, and development is proceeding here at [ht
 
 To see official, correct examples of DesmosPlus syntax, see the [examples](src/examples).
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for an overview of the code.
+
 To see a somewhat-complete guide of the language (also a language spec to some degree, evolving until initial release), read:
 
   - [Syntax](docs/syntax.md)
@@ -53,7 +55,7 @@ Current progress to 0.1 release (custom types and feature parity with Desmos):
 ### Disadvantages
 
 - Need to compile
-- Not (yet) created
+- Not (fully) implemented (or designed)
 
 ## Contributing
 
