@@ -11,12 +11,23 @@ export default class ScopeContext {
     this.localVars = localVars;
   }
 
-  getVariable(varName) {
-    // TODO: nested block scoping if necessary
+  _getVariable(varName) {
     if (this.localVars[varName] !== undefined) {
       return this.localVars[varName]
     } else if (this.visitor.globalVars[varName] !== undefined) {
       return this.visitor.globalVars[varName]
+    }
+  }
+
+  hasVariable(varName) {
+    return this._getVariable(varName) !== undefined
+  }
+
+  getVariable(varName) {
+    // TODO: nested block scoping if necessary
+    const variable = this._getVariable(varName)
+    if (variable) {
+      return variable
     } else {
       console.error("local", this.localVars)
       throw `Variable ${varName} not defined in this scope`

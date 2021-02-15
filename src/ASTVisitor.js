@@ -87,7 +87,9 @@ export default class ASTVisitor {
       args: stmt.funcArguments.map(e => {
         let type = this.types[e.type]
         if (e.type == null) {
-          type = this.types.Any
+          // TODO: default to "Any" type and do proper type inference
+          // type = this.types.Any
+          type = this.types.Num
         }
         if (type === undefined) {
           throw `Type ${e.type} is not defined`
@@ -97,6 +99,9 @@ export default class ASTVisitor {
           type: type
         }
       }),
+      // generateDefaultFunction is reached if the function has no expr,
+      // which should only happen in cases like `def _add(x:Complex, y:Complex) = default`
+      // where the expr is replaced with `default`
       expr: stmt.expr,
       isInline: stmt.isInline,
       // resultType to be filled in during this.determineTypes
@@ -128,7 +133,7 @@ export default class ASTVisitor {
           })),
         resultType,
       }
-      func.isInline = true;
+      func.isInline = true; // HERE
       if (customEval === true) {
         func.latexName = `\\operatorname{${name}}`;
         func.customEval = L => `${func.latexName}\\left(${L.join(',')}\\right)`

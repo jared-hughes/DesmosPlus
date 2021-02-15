@@ -47,68 +47,79 @@ export class FunctionApplication extends LanguageElement {
         expr: this.args[i],
         type: arg.type,
         isInline: definition.isInline,
+        fieldsLatex:
+          scope._getVariable(arg.variable)?.fieldsLatex
+          || scope.visitor.getFieldsLatex(
+            arg.type,
+            arg.variable,
+          ),
       }
-      variable.fieldsLatex = scope.visitor.getFieldsLatex(
-        arg.type,
-        arg.variable,
-      )
       localVars[arg.variable] = variable
     }
     return localVars;
   }
 
   getScope(scope, tempDefinition) {
+    this.localVars = this.localVars || this.getLocalVars(scope, tempDefinition)
     return scope.withLocalVars(
-      this.getLocalVars(scope, tempDefinition),
+      this.localVars,
       (this.resolvedDefinition || tempDefinition).isInline,
     )
   }
 
-  getType(scope) {
-    // TODO: split this function, reduce side effects, etc. This is 60+ lines of spaghet
+  getResolvedDefinition(scope) {
+    if (this.resolvedDefinition) {
+      return this.resolvedDefinition
+    } else {
+      const alts = scope.visitor.functions[this.funcName]
+      if (alts === undefined) {
+        this.throw(`Function ${this.funcName} is not defined`)
+      }
+      const argTypes = this.args.map(e => e.getType(scope))
+      const satisfiedAlts = alts.map(alt => ({
+        definition: alt,
+        localTypeParams: satisfyAlternative(alt, this.args, scope),
+      }))
+      const validAlts = satisfiedAlts.filter(e => e.localTypeParams)
+      if (validAlts.length > 1) {
+        this.throw(`More than one alternative for ${this.funcName}(${argTypes.join(', ')})`)
+      }
+      if (validAlts.length == 0) {
+        this.throw(`No satisfying alternative for ${this.funcName}(${argTypes.join(', ')})`)
+      }
+      const { definition, localTypeParams } = validAlts[0]
+      definition.localTypeParams = localTypeParams
 
-    const alts = scope.visitor.functions[this.funcName]
-    if (alts === undefined) {
-      this.throw(`Function ${this.funcName} is not defined`)
-    }
-    const argTypes = this.args.map(e => e.getType(scope))
-    const satisfiedAlts = alts.map(alt => ({
-      definition: alt,
-      localTypeParams: satisfyAlternative(alt, this.args, scope),
-    }))
-    const validAlts = satisfiedAlts.filter(e => e.localTypeParams)
-    if (validAlts.length > 1) {
-      this.throw(`More than one alternative for ${this.funcName}(${argTypes.join(', ')})`)
-    }
-    if (validAlts.length == 0) {
-      this.throw(`No satisfying alternative for ${this.funcName}(${argTypes.join(', ')})`)
-    }
-    const { definition, localTypeParams } = validAlts[0]
+      if (definition.resultType === undefined) {
+        definition.resultType = definition.expr.getType(
+          this.getScope(scope, definition).withAddedFunc(definition)
+        )
+      }
 
-    if (definition.resultType === undefined) {
-      definition.resultType = definition.expr.getType(
-        this.getScope(scope, definition).withAddedFunc(definition)
+      definition.fieldsLatex = scope.visitor.getFieldsLatex(
+        definition.resultType,
+        this.funcName + (1+satisfiedAlts.indexOf(validAlts[0])),
       )
+      this.resolvedDefinition = definition;
+      return definition
     }
+  }
 
-    definition.fieldsLatex = scope.visitor.getFieldsLatex(
-      definition.resultType,
-      this.funcName + (1+satisfiedAlts.indexOf(validAlts[0])),
-    )
-    this.resolvedDefinition = definition;
+  getType(scope) {
+    const definition = this.getResolvedDefinition(scope)
 
     // need to compare definitions because a function *can* be defined in terms
     // of an (overloaded) function with the same name
-    if (scope.funcChain.includes(this.resolvedDefinition)) {
+    if (scope.funcChain.includes(definition)) {
       this.throw(`Function ${this.funcName} cannot be defined in terms of itself`)
     }
 
     const usedFunctions = scope.visitor.usedFunctions
     usedFunctions[this.funcName] = usedFunctions[this.funcName] || []
-    usedFunctions[this.funcName].push(this.resolvedDefinition)
+    usedFunctions[this.funcName].push(definition)
 
     const result = definition.resultType;
-    return localTypeParams[result] ?? result
+    return definition.localTypeParams[result] ?? result
   }
 
   split(_scope, fromType, member) {

@@ -27,7 +27,11 @@ function latexifyIdentifier(identifier) {
 
   // handle greek letters
   for (let i=1; i<=m; i++) {
+    // i is the length we're searching for
     if (greekLetters.has(identifier.slice(0, i))) {
+      if (identifier.length > i && identifier[i].match(/[a-z]/)) {
+        continue;
+      }
       main = "\\" + identifier.slice(0, i)
       sub = identifier.slice(i)
     }
