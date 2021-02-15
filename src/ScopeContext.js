@@ -25,4 +25,34 @@ export default class ScopeContext {
       // return new FreeVariable(varName)
     }
   }
+
+  withLocalVars(vars) {
+    // TODO: add vars to a variable resolution stack
+    // for now just overwrite outer local vars with inner, more-local vars
+    return new ScopeContext(
+      this.visitor, this.varChain, this.funcChain,
+      {
+        ...this.localVars,
+        ...vars,
+      },
+    )
+  }
+
+  withAddedFunc(func) {
+    return new ScopeContext(
+      this.visitor, this.varChain,
+      [...this.funcChain, func],
+      this.localVars,
+    )
+  }
+
+  withAddedVar(variable) {
+    return new ScopeContext(
+      this.visitor,
+      [...this.varChain, variable],
+      this.funcChain,
+      this.localVars
+    )
+  }
+
 }

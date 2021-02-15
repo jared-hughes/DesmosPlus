@@ -38,6 +38,32 @@ export class FunctionApplication extends LanguageElement {
     this.resolvedDefinition = resolvedDefinition
   }
 
+  getLocalVars(scope, tempDefinition) {
+    let localVars = {};
+    const definition = this.resolvedDefinition || tempDefinition
+    for (let i=0; i<definition.args.length; i++) {
+      const arg = definition.args[i];
+      const variable = {
+        expr: this.args[i],
+        type: arg.type,
+        isInline: definition.isInline,
+      }
+      variable.fieldsLatex = scope.visitor.getFieldsLatex(
+        arg.type,
+        arg.variable,
+      )
+      localVars[arg.variable] = variable
+    }
+    return localVars;
+  }
+
+  getScope(scope, tempDefinition) {
+    return scope.withLocalVars(
+      this.getLocalVars(scope, tempDefinition),
+      (this.resolvedDefinition || tempDefinition).isInline,
+    )
+  }
+
   getType(scope) {
     // TODO: split this function, reduce side effects, etc. This is 60+ lines of spaghet
 
@@ -59,28 +85,9 @@ export class FunctionApplication extends LanguageElement {
     }
     const { definition, localTypeParams } = validAlts[0]
 
-
     if (definition.resultType === undefined) {
-      let newLocalVars = {};
-      for (let i=0; i<this.args.length; i++) {
-        const arg = definition.args[i];
-        newLocalVars[arg.variable] = {
-          expr: this.args[i],
-          fieldsLatex: scope.visitor.getFieldsLatex(
-            arg.type,
-            arg.variable,
-          ),
-          type: arg.type,
-        }
-      }
-      definition.localVars = newLocalVars
       definition.resultType = definition.expr.getType(
-        new ScopeContext(
-          scope.visitor,
-          [],
-          [...scope.funcChain, definition],
-          newLocalVars
-        )
+        this.getScope(scope, definition).withAddedFunc(definition)
       )
     }
 
@@ -104,29 +111,34 @@ export class FunctionApplication extends LanguageElement {
     return localTypeParams[result] ?? result
   }
 
-  split(scope, fromType, member) {
+  split(_scope, fromType, member) {
+    const scope = this.getScope(_scope);
     if (this.resolvedDefinition.resultType === fromType) {
       if (this.resolvedDefinition.isPassthrough) {
         // this is a function like in z=Complex(2,3), just split to zReal=2 and zImag=3
         // instead of definining ComplexReal(a,b)=a and ComplexImag(a,b)=b, etc.
         return this.args[this.resolvedDefinition.args.map(e => e.variable).indexOf(member)]
       } else {
+        const name = this.resolvedDefinition.fieldsLatex[member]
         return new FunctionApplication(
           this.ctx,
           this.resolvedDefinition.fieldsLatex[member],
-          // TODO maybe? split args into `Num`s only, then flatten
           this.args,
-          // TODO maybe? split resolvedDefinition to accept split/flattened `Num`s
           {
-            ...this.resolvedDefinition,
-            latexName: this.resolvedDefinition.fieldsLatex[member],
-            // args: ...,
+            args: this.resolvedDefinition.args,
+            expr: this.resolvedDefinition.expr.split(scope, fromType, member),
+            fieldsLatex: name, // It's a Num, not an object
+            isInline: this.resolvedDefinition.isInline,
+            latexName: name,
+            name: this.resolvedDefinition.name,
+            resultType: this.resolvedDefinition.resultType.fieldTypes[member],
           }
         )
       }
 
     } else {
       // TODO: this is where you handle custom types when not needing to split
+      // Can this situation even occur?
       return {
         ...this,
         funcName: this.funcName + "_latextodo"
@@ -134,7 +146,8 @@ export class FunctionApplication extends LanguageElement {
     }
   }
 
-  toLatex(scope) {
+  toLatex(_scope) {
+    const scope = this.getScope(_scope)
     let values = []
     for (let arg of this.args) {
       const objectType = arg.getType(scope);
@@ -148,9 +161,11 @@ export class FunctionApplication extends LanguageElement {
         values.push(arg.toLatex(scope))
       }
     }
-    // _add in definition of add(z1:Complex, z2:Complex) is getting an undefined resolvedDefinition
+
     if (this.resolvedDefinition.customEval) {
       return this.resolvedDefinition.customEval(values)
+    } else if (this.resolvedDefinition.isInline) {
+      return this.resolvedDefinition.expr.toLatex(scope)
     } else {
       return this.resolvedDefinition.latexName + '\\left(' + values.join(',') + '\\right)'
     }
@@ -232,26 +247,24 @@ export class VariableExpression extends LanguageElement {
     }
     const variable = scope.getVariable(this.varName)
     if (variable.type === undefined) {
-      return variable.expr.getType(
-        new ScopeContext(
-          scope.visitor,
-          [...scope.varChain, this.varName],
-          scope.funcChain,
-          scope.localVars,
-        )
-      )
+      return variable.expr.getType(scope.withAddedVar(this.varName))
     } else {
       return variable.type
     }
   }
 
   split(scope, fromType, member) {
+    // Need to pass down isPassthrough to know when not to substitute
     const myType = this.getType(scope)
     if (myType === fromType) {
       const variable = scope.getVariable(this.varName)
-      let expr = new VariableExpression(this.ctx, this.varName)
-      expr.toLatex = scope => variable.fieldsLatex[member];
-      return expr;
+      if (this.varName in scope.localVars && variable.isInline) {
+        return variable.expr.split(scope, fromType, member)
+      } else {
+        let expr = new VariableExpression(this.ctx, this.varName)
+        expr.toLatex = scope => variable.fieldsLatex[member];
+        return expr;
+      }
     } else {
       this.throw(`Must be able to split to ${member} but failed on ${this.varName}`)
     }
@@ -262,7 +275,11 @@ export class VariableExpression extends LanguageElement {
     if (variable.customLatex) {
       return variable.customLatex
     } else {
-      return variable.fieldsLatex
+      if (variable.isInline) {
+        return variable.expr.toLatex(scope.withLocalVars({}, false))
+      } else {
+        return variable.fieldsLatex
+      }
     }
   }
 }

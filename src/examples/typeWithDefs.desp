@@ -6,7 +6,8 @@ type Complex@{
 def mag(z:Complex) = sqrt(z.real^2+z.imag^2)
 
 // (Complex, Complex) -> Complex
-def _add(z1:Complex, z2:Complex) = Complex@{
+// Asterisk indicates inline
+def _add*(z1:Complex, z2:Complex) = Complex@{
   real: z1.real+z2.real,
   imag: z1.imag+z2.imag,
 }
@@ -27,6 +28,7 @@ let f = a+b
 // g should be sqrt(8^2+6^2)=10
 let g = mag(f)
 let expipi = expi(pi)
+let k = Complex(1,2)+Complex(4,5)
 
 type Point3D@{
   x: Num,

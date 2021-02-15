@@ -98,6 +98,7 @@ export default class ASTVisitor {
         }
       }),
       expr: stmt.expr,
+      isInline: stmt.isInline,
       // resultType to be filled in during this.determineTypes
     })
   }
@@ -120,9 +121,14 @@ export default class ASTVisitor {
     for (const [name, args, resultType, customEval] of Builtins.functions) {
       let func = {
         name,
-        args: args.map(t => ({type: t})),
+        args: args.map((t, i) => ({
+            type: t,
+            // name doesn't matter, but may need to be distinct for different i
+            variable: "__builtinarg_" + i,
+          })),
         resultType,
       }
+      func.isInline = true;
       if (customEval === true) {
         func.latexName = `\\operatorname{${name}}`;
         func.customEval = L => `${func.latexName}\\left(${L.join(',')}\\right)`
@@ -156,7 +162,7 @@ export default class ASTVisitor {
       let variable = this.globalVars[varName]
       if (variable.type === undefined) {
         variable.type = variable.expr.getType(
-          new ScopeContext(this, [varName], [], {})
+          new ScopeContext(this, [varName], [], {}, false)
         )
         variable.fieldsLatex = this.getFieldsLatex(variable.type, varName);
       }
@@ -193,7 +199,7 @@ export default class ASTVisitor {
 
   generateLet(stmt) {
     const objectType = this.globalVars[stmt.variable].type
-    const scope = new ScopeContext(this, [stmt.variable], [], {})
+    const scope = new ScopeContext(this, [stmt.variable], [], {}, false)
     if (objectType.fields) {
       return objectType.fields.map(
         field => this.assignmentExpression(
@@ -208,24 +214,31 @@ export default class ASTVisitor {
 
   generateDef(stmt) {
     // If a function is not used, it is not output (hence the `??`)
-    console.log("T", this.usedFunctions)
     const functionsDefinedHere = (this.usedFunctions[stmt.funcName] ?? [])
       .filter(func => func.expr && func.expr.line === stmt.expr.line && func.expr.col === stmt.expr.col)
 
     let out = []
     let alreadyAddedFuncs = new Set()
     for (let func of functionsDefinedHere) {
-      if (alreadyAddedFuncs.has(func)) {
+      if (func.isInline || alreadyAddedFuncs.has(func)) {
         continue;
       }
       alreadyAddedFuncs.add(func)
       const resultType = func.resultType
-      const scope = new ScopeContext(this, [], [stmt.funcName], func.localVars)
+      const outerScope = new ScopeContext(this, [], [stmt.funcName], {}, false)
+      let localVars = {}
+      func.args.map(({variable, type}) => {
+        localVars[variable] = {
+          type,
+          fieldsLatex: this.getFieldsLatex(type, variable),
+        }
+      })
+      const scope = outerScope.withLocalVars(localVars)
       // Get args as a list of Num-typed variables
       let argsFlat = []
       for (let arg of func.args) {
         const objectType = arg.type;
-        const variable = func.localVars[arg.variable]
+        const variable = localVars[arg.variable]
         if (objectType.fields) {
           argsFlat.push(
             ...variable.type.fields.map(
@@ -233,7 +246,6 @@ export default class ASTVisitor {
             )
           )
         } else {
-          // HERE
           argsFlat.push(variable.fieldsLatex)
         }
       }
@@ -258,7 +270,7 @@ export default class ASTVisitor {
       }
       out.push(...values.map(val => (
         this.assignmentExpression(
-          val.latexName + `(${argsFlat.join(',')})`,
+          val.latexName + `\\left(${argsFlat.join(',')}\\right)`,
           scope, val.expr
         )
       )))
@@ -268,10 +280,6 @@ export default class ASTVisitor {
 
   generateDesmos() {
     // TODO: map local vars?
-    // TODO: handle e.g. `cos(x)` differently than `f2(x)` because `cos` is builtin
-    // let identifierMapping = getIdentifierMapping([
-    //   ...Object.keys(this.globalVars),
-    // ])
 
     let desmosExpressions = []
     this.program.map(stmt => {

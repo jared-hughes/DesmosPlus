@@ -88,7 +88,8 @@ export default class ParseTreeVisitor extends DesmosPlusParserVisitor {
       statement: 'def',
       funcName: this.visit(ctx.identifier()),
       funcArguments: this.visit(ctx.functionDefinitionArguments()),
-      expr: this.visit(ctx.mathExpr())
+      expr: this.visit(ctx.mathExpr()),
+      isInline: ctx.optionalInline !== null,
     }
 	}
 

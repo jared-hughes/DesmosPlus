@@ -73,6 +73,9 @@ For syntax development:
 
 ### Short-term
 
+- Scope should be stored in construction of an Expr instead of passed down through the ENTIRE chain
+- Reduce confusion between `(FunctionExpression).args` and `(FunctionExpression).resolvedDefinition.args` be renaming the latter to `.argVariables`
+- Store local variables in a stack instead of `localVars`/`globalVars`
 - typeclasses with increasing specificity to automatically define `_add(Any, Any)` (add similar) by adding corresponding terms, but can be overridden by defining `_add(MyType, MyType)`
 - Enforce capital/lowercase conventions? Otherwise need some check to prevent collisions like `def Fun(x)=x^2` and `type Fun@{x:1}`
 - Some `throw`s don't have line nums
@@ -91,7 +94,6 @@ For syntax development:
   - The hard decision is how to capture the output. Maybe `[$a, $b, $r2] ← Regress(y1==a*x1+b)` or something
 - Add absolute value with pipes `|expr|`
 - Add factorial with bang `!`
-- I want to remove the `@` syntax for objects if possible. I keep forgetting it, but it does prevent confusion with piecewises.
 - How to determine default colors?
 - Add tuple type? Do we even need to have `Point` as a primitive?
 - `_get([Any], [Num])`
@@ -99,6 +101,7 @@ For syntax development:
 
 ### Medium-term
 
+- unused variables warning
 - clearer error messages
   - `"Piecewise conditions must have type Bool"` → specific condition that lacks type `Bool`
   - point to error in desp code. Should be simple with `ctx.line` and `ctx.col`
