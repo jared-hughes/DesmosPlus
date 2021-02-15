@@ -172,6 +172,74 @@ export class FunctionApplication extends LanguageElement {
   }
 }
 
+export class DefaultFunction extends LanguageElement {
+  constructor(ctx, innerFunc, argVariables) {
+    super(ctx)
+    // TODO: handle defaulting wrapped
+    // TODO: expand to work for arguments with different types (one Num, one not, etc),
+    // for example `def _add(a:Num, z:Complex) = default`
+    const objectType = argVariables.find(arg => arg.type.type != 'Num').type
+    if (objectType === undefined) {
+      this.throw(`Can only generate default functions if an object argument is present`)
+    } else if (
+      !argVariables.every(arg => (
+        arg.type.type == 'Num'
+        || arg.type.equalsType(objectType))
+      )
+    ) {
+      this.throw(`Can only generate default functions if all arguments are the same type`)
+    } else if (objectType.numWrapped > 0) {
+      this.throw(`Cannot default wrapped variables (yet)`)
+    }
+    // now must have two arguments of the same type
+    this.objectType = objectType
+    this.innerFunc = innerFunc
+    this.argVariables = argVariables
+  }
+
+  resolvedDefinition(scope) {
+    const typeName = this.objectType.type
+    const objectType = scope.visitor.types[typeName]
+    return new ObjectInstance(
+      this.ctx,
+      typeName, // HERE
+      objectType.fields.map(({fieldName}) => ({
+        field: fieldName,
+        value: new FunctionApplication(
+          this.ctx,
+          this.innerFunc,
+          this.argVariables.map(({variable, type}) => {
+            const varExpr = new VariableExpression(
+              this.ctx,
+              variable
+            )
+            if (type.type == 'Num') {
+              return varExpr
+            } else {
+              return new ObjectAccessExpression(this.ctx, varExpr, fieldName)
+            }
+          })
+        )
+      }))
+    )
+  }
+
+  getType(scope) {
+    this.resolvedDefinition = this.resolvedDefinition(scope)
+    // should return just this.objectType
+    // but need to call getType for side effects
+    return this.resolvedDefinition.getType(scope)
+  }
+
+  split(scope, fromType, member) {
+    return this.resolvedDefinition.split(scope, fromType, member)
+  }
+
+  toLatex(scope) {
+    return this.split(scope).toLatex(scope)
+  }
+}
+
 export class ObjectAccessExpression extends LanguageElement {
   constructor(ctx, object, identifier) {
     super(ctx)
@@ -254,7 +322,6 @@ export class VariableExpression extends LanguageElement {
   }
 
   split(scope, fromType, member) {
-    // Need to pass down isPassthrough to know when not to substitute
     const myType = this.getType(scope)
     if (myType === fromType) {
       const variable = scope.getVariable(this.varName)

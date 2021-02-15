@@ -22,6 +22,10 @@ export default class VariableType {
     return '['.repeat(this.numWrapped) + this.type + ']'.repeat(this.numWrapped)
   }
 
+  equalsType(other) {
+    return this.numWrapped == other.numWrapped && this.type == other.type
+  }
+
   matchesType(other, scope) {
     // returns true iff `other` is the same or more general type as `this`
     return (

@@ -18,7 +18,7 @@ folderStatement
 nestableStatement
    : 'let' identifier '=' mathExpr optionalMetadata # LetStatement
    | 'const' identifier '=' mathExpr # ConstStatement
-   | 'def' identifier optionalInline='*'? functionDefinitionArguments '=' mathExpr # DefStatement
+   | 'def' identifier optionalInline='*'? functionDefinitionArguments '=' (mathExpr | 'default') # DefStatement
    | 'note' mathExpr # NoteStatement
    | 'show' mathExpr optionalMetadata # ShowStatement
    | 'parametric' mathExpr ',' assignment optionalMetadata # ParametricStatement

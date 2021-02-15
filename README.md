@@ -74,16 +74,14 @@ For syntax development:
 ### Short-term
 
 - Scope should be stored in construction of an Expr instead of passed down through the ENTIRE chain
+- Use proper type inference and allow for Any type
+- Allow for `f(a)=2*a` and `a=f(1)` to be compatible
 - Reduce confusion between `(FunctionExpression).args` and `(FunctionExpression).resolvedDefinition.args` be renaming the latter to `.argVariables`
 - Store local variables in a stack instead of `localVars`/`globalVars`
 - typeclasses with increasing specificity to automatically define `_add(Any, Any)` (add similar) by adding corresponding terms, but can be overridden by defining `_add(MyType, MyType)`
 - Enforce capital/lowercase conventions? Otherwise need some check to prevent collisions like `def Fun(x)=x^2` and `type Fun@{x:1}`
 - Some `throw`s don't have line nums
 - bugs, bugs, bugs
-- inline flag on operator function definitions, so e.g. `def _add(z1:Complex, z2:Complex)=(...)` can be in-lined if desired
-  - `def _add*(z1:Complex, z2:Complex)=(...)`
-  - `def _add(z1:Complex, z2:Complex)=(...), @{inline: true}`
-
 - Maybe make `graph` a synonym for `show`? May complicate things though
 - Graphing polar functions: should these just be parametrics?
 - Should `Num` be changed to `Float`? Maybe `Num` should be a synonym for `Float`?
@@ -97,6 +95,7 @@ For syntax development:
 - How to determine default colors?
 - Add tuple type? Do we even need to have `Point` as a primitive?
 - `_get([Any], [Num])`
+- Reversal inferencing like `__rmul__` in python. So you only need to define `_mul(a:Num, z:Complex)` to allow executing both `5*Complex(1,2)` and `Complex(1,2)*5`
 
 
 ### Medium-term
@@ -118,14 +117,13 @@ For syntax development:
 - Vectorization syntax, e.g. `[1,2]+[3,4]==_add([1,2], [3,4])` while `[1,2]+/[3,4] == [_add(1,2), _add(3,4)]` or maybe `[1,2]+.[3,4] == [_add(1,2), _add(3,4)]`
   - This could be handled with `map` + `zip`
 - Operations on `Interval`s
-  - In general, default operations on two data classes. `type Point3D@{x:Num, y:Num, z:Num}` should default `_add` to adding corresponding fields
-    - Maybe specify `def _add(p:Point3D, q:Point3D) = default` where `default` is a keyword
 - Need to make `x`, `y`, `t`, etc. reserved in some way?
   - Do not remove the ability to have `x` as a custom type field
   - Do not remove the ability to have `x` as a function argument
   - Do remove the ability to `let x=...` and `const x=...`, etc.
 - Can't do arithmetic on `VariableReference`s and other types. Can these be taken up to a `FullExpr` rule?
 - Unicode synonyms `≤≥≠×÷∨∧≡←` maybe.
+- Some general format to allowing casting `Num` to `Complex`?
 
 ### Long-term
 

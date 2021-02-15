@@ -7,10 +7,9 @@ def mag(z:Complex) = sqrt(z.real^2+z.imag^2)
 
 // (Complex, Complex) -> Complex
 // Asterisk indicates inline
-def _add*(z1:Complex, z2:Complex) = Complex@{
-  real: z1.real+z2.real,
-  imag: z1.imag+z2.imag,
-}
+def _add*(z1:Complex, z2:Complex) = default
+def _sub*(z1:Complex, z2:Complex) = default
+def _neg*(z:Complex) = default
 
 // Num -> Complex
 def expi(theta:Num) = Complex(
@@ -29,6 +28,8 @@ let f = a+b
 let g = mag(f)
 let expipi = expi(pi)
 let k = Complex(1,2)+Complex(4,5)
+let m = Complex(5,6)-Complex(4,2)
+let n = -Complex(3,4)
 
 type Point3D@{
   x: Num,

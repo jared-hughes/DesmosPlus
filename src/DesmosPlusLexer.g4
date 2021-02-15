@@ -26,6 +26,8 @@ Table:                        'table';
 Folder:                       'folder';
 Type:                         'type';
 
+Default:                      'default';
+
 SingleLineComment
    : '//' ~ [\r\n]* -> skip
    ;
