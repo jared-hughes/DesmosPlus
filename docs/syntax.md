@@ -4,7 +4,7 @@ Until the syntax is implemented, using JavaScript syntax highlighting works dece
 
 ## Identifiers
 
-There is no need to require variable identifiers with subscripts like `P_{list}` as in Desmos. We can use normal `[a-zA-Z_][a-zA-Z0-9_]*` identifiers common in programming languages
+There is no need to require variable identifiers with subscripts like `P_{list}` as in Desmos. We can use normal `[a-zA-Z_][a-zA-Z0-9_]*` identifiers common in programming languages. The tradeoff for this is no implicit multiplication: `ab` is parsed not as `a*b` but as a single value `ab`.
 
 ```js
 DesmosPlus | Desmos
