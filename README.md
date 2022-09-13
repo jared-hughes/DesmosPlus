@@ -1,5 +1,7 @@
 # DesmosPlus
 
+## ⚠ This repository is archived. See instead [DesModder's text mode](https://github.com/DesModder/DesModder)
+
 Write less. Say more. DesmosPlus is a text-based language that compiles to Desmos graphs.
 
 The main objective of the language is to make all code easier to use and remove repetitive actions.
